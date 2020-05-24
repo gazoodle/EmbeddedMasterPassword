@@ -34,6 +34,7 @@
 #include <pbkdf2.h>
 #include <scrypt.h>
 #include <mpw.h>
+#include <version.h>
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Foward declarations of test functions
@@ -45,7 +46,8 @@ void test_MPW(void);
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 int main()
 {
-    printf("### Embedded Master Password Unit Test Suite ###\n\n");
+    printf("### Embedded Master Password Unit Test Suite ###\n");
+    printf("Using version %s\n\n", EMPW_VERSION_STRING );
 
     printf("SHA256 tests **********************************************\n");
     test_sha256();
