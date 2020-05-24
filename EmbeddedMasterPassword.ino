@@ -6,9 +6,7 @@ MPW mpw;
 
 void setup(void)
 {
-    Serial.begin(115200);
-    while(!Serial)
-        ;
+    IO.begin(115200);
     Serial.println("Setup");
     uint8_t last_percent = 0;
     mpw.login("user","password",[&](uint8_t percent){

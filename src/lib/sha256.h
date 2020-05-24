@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <io.h>
 
 #define SHA256_MESSAGE_SCHEDULE_SIZE        64              // Compression algorithm buffer
 #define SHA256_MESSAGE_SCHEDULE_SIZE_MASK   (SHA256_MESSAGE_SCHEDULE_SIZE-1)

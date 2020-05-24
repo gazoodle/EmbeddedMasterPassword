@@ -27,8 +27,8 @@
 
 #define TEST_SUITE
 
-#include <stdio.h>
 #include <stdint.h>
+#include <io.h>
 #include <sha256.h>
 #include <hmac.h>
 #include <pbkdf2.h>
@@ -46,18 +46,17 @@ void test_MPW(void);
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 int main()
 {
-    printf("### Embedded Master Password Unit Test Suite ###\n");
-    printf("Using version %s\n\n", EMPW_VERSION_STRING );
-
-    printf("SHA256 tests **********************************************\n");
+    IO << "### Embedded Master Password Unit Test Suite ###" << endl;
+    IO << "Using version " << EMPW_VERSION_STRING << endl << endl;
+    IO << "SHA256 tests **********************************************" << endl;
     test_sha256();
-    printf("HMAC-SHA256 tests *****************************************\n");
+    IO << "HMAC-SHA256 tests *****************************************" << endl;
     test_hmac_sha256();
-    printf("PBKDF2-HMAC-SHA256 tests **********************************\n");
+    IO << "PBKDF2-HMAC-SHA256 tests **********************************" << endl;
     test_pbkdf2_hmac_sha256();    
-    printf("scrypt tests **********************************************\n");
+    IO << "scrypt tests **********************************************" << endl;
     test_scrypt();
-	printf("MasterPassword tests **************************************\n");
+	IO << "MasterPassword tests **************************************" << endl;
     test_MPW();
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -71,7 +70,7 @@ void assert(const uint8_t val, const uint8_t expected, const char * ctx)
 {
 	if ( val != expected ) 
 	{
-        printf("Assertion failed. %s. Found 0x%.02x expected 0x%.02x\n", ctx, val, expected );
+        IO << "Assertion failed. " << ctx << ". Found 0x" << _HEX(val) << " expected 0x" << _HEX(expected) << endl;
 		exit(1);
 	}
 }
@@ -80,7 +79,7 @@ void assert(const size_t val, const size_t expected, const char * ctx)
 {
 	if ( val != expected ) 
 	{
-        printf("Assertion failed. %s. Found 0x%.02lx expected 0x%.02lx\n", ctx, val, expected );
+        IO << "Assertion failed. " << ctx << ". Found 0x" << _HEX(val) << " expected 0x" << _HEX(expected) << endl;
 		exit(1);
 	}
 }
@@ -106,7 +105,7 @@ void assert_hash(const uint8_t *hash, const char *expected, const char *test, ui
 		assert(hash[i], expected_byte, ctx_buf);
 	}
 
-	printf("Test [%s] passed\n", test);
+	IO << "Test [" << test << "] passed" << endl;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -314,27 +313,23 @@ void test_MPW(void)
         const char* password = mpw.generate(td.type);
         bool matched = strcmp( password, td.expected ) == 0;
 
-        printf("Test %.2d: User(%s,%s) -> Site(%s,%d) -> Password(%d) == `%s` [Expected `%s`] -> %s\n",
-            i+1,
-            td.user, td.password,
-            td.site, td.counter,
-            td.type,
-            password,
-            td.expected,
-            matched ? "✓" : "❎"
-            );
+        IO  << "Test " << i+1 << ": User(" << td.user << "," << td.password << ")"
+            << " -> Site(" << td.site << "," << td.counter << ")"
+            << " -> Password(" << td.type << ") == `" << password << "`"
+            << " [Expected `" << td.expected << "`] -> " << (matched ? "✓" : "❎")
+            << endl;
 
         if ( !matched )
         {
-            printf("^^^^^^^^ DID NOT MATCH ^^^^^^^^^^^\n");
+            IO << "^^^^^^^^ DID NOT MATCH ^^^^^^^^^^^" << endl;
             exit(1);
         }
     }
 
-    printf("+=================================================+\n");
-    printf("|                                                 |\n");
-    printf("|         MasterPassword Tests Complete           |\n");
-    printf("|                                                 |\n");
-    printf("+=================================================+\n");
+    IO << "+=================================================+" << endl;
+    IO << "|                                                 |" << endl;
+    IO << "|         MasterPassword Tests Complete           |" << endl;
+    IO << "|                                                 |" << endl;
+    IO << "+=================================================+" << endl;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////

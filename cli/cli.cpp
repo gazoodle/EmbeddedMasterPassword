@@ -1,6 +1,7 @@
-#include <stdio.h>
+#include <mpw.h>
+#include <version.h>
 
 int main()
 {
-    printf("Hello\n");
+    IO << "Hello" << endl;
 }

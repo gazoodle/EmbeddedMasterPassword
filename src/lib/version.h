@@ -24,7 +24,7 @@
     =======
 
     0.0.x       Apr 2020        -   Proof of concept code
-    0.1.x       May 2020        -   Initial version
+    0.1.x       May 2020        -   Initial development
 
 
     Using Semantic versioning https://semver.org/
@@ -39,7 +39,7 @@
 
 
 #define EMPW_VERSION        0.1
-#define EMPW_PATCH          1
+#define EMPW_PATCH          2
 
 
 #define EMPW_VERSION_STRING VERSION_STRINGIZE(EMPW_VERSION) "." VERSION_STRINGIZE(EMPW_PATCH)
