@@ -207,12 +207,14 @@ public:
 
         if ( sparse_v_malloc_blocks > 0 && ( m_heap_buffer == 0 ))
         {
+            /*
             #ifdef ARDUINO
             Serial << "Oops" << endl;
             #else
             printf("Oops\n");
             #endif
             return;
+            */
         }
 
         // 1. X = B

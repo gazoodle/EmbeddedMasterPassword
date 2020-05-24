@@ -2,6 +2,10 @@
 An embedded implementation of the MasterPassword project
 
 
+Using Semantic versioning https://semver.org/
+
+
+
 TL;DR
 =====
 
