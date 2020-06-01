@@ -26,7 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
-#include <io.h>
+#include "io.h"
 
 #define SHA256_MESSAGE_SCHEDULE_SIZE        64              // Compression algorithm buffer
 #define SHA256_MESSAGE_SCHEDULE_SIZE_MASK   (SHA256_MESSAGE_SCHEDULE_SIZE-1)
@@ -38,6 +38,8 @@
 
 class SHA256
 {
+private:
+    SHA256(const SHA256& other) {}
 public:
     SHA256(void) { reset(); }
     SHA256(const uint8_t *message, uint32_t message_size );

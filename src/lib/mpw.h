@@ -34,7 +34,7 @@
 #define SCRYPT_P                    2
 
 typedef enum {
-    Maximum,
+    Maximum = 0,
     Long,
     Medium,
     Basic,
@@ -55,6 +55,8 @@ typedef enum {
 
 class MPW
 {
+private:
+    MPW(const MPW& other){}
 public:
     MPW(void) : m_master_key(0), m_site_key_holder(0), m_site_key(0), m_site_password(0) {}
     ~MPW(void) { logout(); }

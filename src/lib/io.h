@@ -22,6 +22,7 @@
 #ifndef _inc_io_h
 #define _inc_io_h
 
+#include "../platform.h"
 
 #ifdef ARDUINO
 #include <Arduino.h>
@@ -33,6 +34,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+
 
 // TODO: Needs tidying up and fixing 
 class Print

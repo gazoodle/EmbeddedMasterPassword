@@ -29,6 +29,8 @@
 template <class HASH_ALGO>
 class HMAC
 {
+private:
+    HMAC(const HMAC& other) {}
 public:
     HMAC(const uint8_t *key, uint32_t key_size);
     HMAC(const uint8_t *key, uint32_t key_size, const uint8_t *message, uint32_t message_size );

@@ -95,8 +95,8 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 typedef std::function<void (uint8_t percent)> progress_func;
-#define min(a,b)        ((a)<(b)?(a):(b))
-#define max(a,b)        ((a)>(b)?(a):(b))
+#define mix_min(a,b)        ((a)<(b)?(a):(b))
+#define mix_max(a,b)        ((a)>(b)?(a):(b))
 
 template<uint32_t N, uint32_t r, uint32_t p, uint32_t dkLen, uint32_t stack_allocation, uint32_t heap_allocation>
 class scrypt_mixer
@@ -109,12 +109,19 @@ public:
         sparse_v_stack_blocks = countof(m_stack_buffer)/(r*2);
         sparse_v_global_blocks = global_size / ( r * 2 * sizeof(Salsa20Block) );
         if ( sparse_v_malloc_blocks + sparse_v_stack_blocks + sparse_v_global_blocks > 0 )
-            sparse_factor = min( N, max(1, ( N / (sparse_v_malloc_blocks + sparse_v_stack_blocks + sparse_v_global_blocks ))));
+            sparse_factor = mix_min( N, mix_max(1, ( N / (sparse_v_malloc_blocks + sparse_v_stack_blocks + sparse_v_global_blocks ))));
         if ( N % (sparse_v_malloc_blocks + sparse_v_stack_blocks + sparse_v_global_blocks ) != 0 )
             sparse_factor++;
+        //IO << "N=" << N << " malloc_blocks=" << sparse_v_malloc_blocks << " stack_blocks=" << sparse_v_stack_blocks << " global_blocks=" << sparse_v_global_blocks << " sparse_factor=" << sparse_factor << endl;
         if ( sparse_v_malloc_blocks > 0 )
+        {
             m_heap_buffer = (Salsa20Block*)malloc(r*2*sparse_v_malloc_blocks*sizeof(Salsa20Block));
-        //Serial << "N=" << N << " malloc_blocks=" << sparse_v_malloc_blocks << " stack_blocks=" << sparse_v_stack_blocks << " global_blocks=" << sparse_v_global_blocks << " sparse_factor=" << sparse_factor << endl;
+            if ( m_heap_buffer == 0 )
+            {
+                IO << F("Failed to allocate ROMix heap buffer of ") << r*2*sparse_v_malloc_blocks*sizeof(Salsa20Block) << endl;
+                empw_exit(EXITCODE_NO_MEMORY);
+            }
+        }
     }
     ~scrypt_mixer(void)
     {
@@ -204,18 +211,6 @@ public:
     void ROMix(Salsa20Block* block, progress_func progress)
     {
         if (progress)(progress)(0);
-
-        if ( sparse_v_malloc_blocks > 0 && ( m_heap_buffer == 0 ))
-        {
-            /*
-            #ifdef ARDUINO
-            Serial << "Oops" << endl;
-            #else
-            printf("Oops\n");
-            #endif
-            return;
-            */
-        }
 
         // 1. X = B
         memcpy( X, block, sizeof(X));

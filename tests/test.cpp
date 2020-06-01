@@ -29,15 +29,17 @@
 
 #include <stdint.h>
 #include <io.h>
+#include <str_ptr.h>
 #include <sha256.h>
 #include <hmac.h>
 #include <pbkdf2.h>
 #include <scrypt.h>
 #include <mpw.h>
-#include <version.h>
+#include "../src/version.h"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Foward declarations of test functions
+void test_str_ptr(void);
 void test_sha256(void);
 void test_hmac_sha256(void);
 void test_pbkdf2_hmac_sha256(void);
@@ -48,6 +50,9 @@ int main()
 {
     IO << "### Embedded Master Password Unit Test Suite ###" << endl;
     IO << "Using version " << EMPW_VERSION_STRING << endl << endl;
+
+    IO << "str_ptr tests *********************************************" << endl;
+    test_str_ptr();
     IO << "SHA256 tests **********************************************" << endl;
     test_sha256();
     IO << "HMAC-SHA256 tests *****************************************" << endl;
@@ -65,6 +70,15 @@ int main()
 //      General support for test suite
 //
 //
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void assert(bool val, const bool expected, const char * ctx)
+{
+	if ( val != expected ) 
+	{
+        IO << "Assertion failed. " << ctx << ". Got " << val << " expected " << expected << endl;
+		exit(1);
+	}
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void assert(const uint8_t val, const uint8_t expected, const char * ctx)
 {
@@ -106,6 +120,45 @@ void assert_hash(const uint8_t *hash, const char *expected, const char *test, ui
 	}
 
 	IO << "Test [" << test << "] passed" << endl;
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//
+//      str_ptr suite
+//
+//
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void assert_str(bool val, const bool expected, const char * test_name)
+{
+    assert(val, expected, test_name);
+	IO << "Test [" << test_name << "] passed" << endl;
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void test_str_ptr(void)
+{
+    str_ptr s;
+    assert_str(s == "", false, "Uninitialized str_ptr doesn't equal empty string" );
+    assert(s.refcount(), 0, "Uninitialized str_ptr has refcount of zero" );
+
+    s = "One";
+    assert_str(s == "One", true, "Assigned string matches value" );
+    assert(s.refcount(), 1, "Reference count is one");
+
+    {
+        str_ptr t(s);       // Copy construct
+        assert(t.refcount(), 2, "Refcount of t is two too");
+        assert(s.refcount(), 2, "Refcount of s is two");
+
+        // Scope lifetime
+        str_ptr r("Two");
+        assert(r.refcount(), 1, "Refcount of r is one");
+        s = r;
+
+        assert_str(s == "Two", true, "Assigned string matches new value" );
+        assert(s.refcount(), 2, "Refcount is two still again");
+    }
+
+    assert(s.refcount(), 1, "Refcount of s is now one since r went out-of-scope");
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //

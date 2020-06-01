@@ -38,6 +38,8 @@ extern "C" uint8_t external_psram_size;
 template<uint32_t N, uint32_t r, uint32_t p, uint32_t dkLen>
 class scrypt
 {
+private:
+    scrypt(const scrypt& other) {}
 public:
     scrypt() : m_final(0) {}
     ~scrypt() { Reset(); }
@@ -50,6 +52,12 @@ public:
     }
 
     void Reset(void);
+
+private:
+#if defined(ARDUINO_TEENSY40) || defined(ARDUINO_TEENSY41)
+    inline void GlobalMixer(Salsa20Block* block, progress_func progress, uint32_t global_size);
+    void StackAndMallocMixer(Salsa20Block* block, progress_func progress);
+#endif
 
 private:
     PBKDF2<HMAC<SHA256>,dkLen>* m_final;

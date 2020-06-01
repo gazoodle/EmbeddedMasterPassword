@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Embedded Master Password Desktop Client test program
+//  userinfo.h - Header file for userinfo persistence control block
 //
 //  Copyright (C) 2020, Gazoodle (https://github.com/gazoodle)
 //
@@ -19,15 +19,44 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include "../src/app/command.h"
+#ifndef _inc_userinfo_h
+#define _inc_userinfo_h
 
-command command_processor;
-///////////////////////////////////////////////////////////////////////////////////////////////////
-int main()
+#include "../lib/mpw.h"
+#include "../lib/str_ptr.h"
+#include "persistence.h"
+
+class userinfo
 {
-    command_processor.setup();
-    while( command_processor.is_running())
-        command_processor.loop();    
-    return 0;
+private:
+    userinfo() {}
+    userinfo(const userinfo& other) {}
+public:
+    userinfo(const char * username) : m_username(username) {}
+    userinfo(const str_ptr& username) : m_username(username) {}
+    ~userinfo(){}
+
+    bool                is_user(const char * u) const { return m_username == u; }
+    const char *        get_user_name(void)     const { return m_username; }
+    MPW&                get_mpw(void)                 { return m_mpw; }
+
+    static userinfo *   load(persistence& p);
+    void                save(persistence& p) const;
+
+private:
+    MPW     m_mpw;
+    str_ptr m_username;
+};
+///////////////////////////////////////////////////////////////////////////////////////////////////
+inline userinfo * userinfo::load(persistence& p)
+{
+    return new userinfo(p.readstr());
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+inline void userinfo::save(persistence& p) const
+{
+    p.writestr(m_username);
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+#endif

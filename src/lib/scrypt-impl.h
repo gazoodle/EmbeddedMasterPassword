@@ -41,18 +41,12 @@ const uint8_t * scrypt<N,r,p,dkLen>::hash( const uint8_t * passphrase, uint32_t 
     uint32_t global_size = external_psram_size * 1024 * 1024;
     if ( global_size > 0 )
     {
-        // If someone has been kind enought to solder a PSRAM chip or two on the boards
-        // we can use that to great effect
-        scrypt_mixer<N,r,p,dkLen,0, 0> mixer((Salsa20Block*)(0x70000000), global_size);
-        mixer.Mix(block, progress);
+        GlobalMixer(block, progress, global_size);
     }
     else
     {
-        //  Emperical testing has shown these values work on Teensy 4.0 or 4.1 without external PSRAM
-        #define ROMIX_SPARSE_V_MALLOC_MAX   (493568)
-        #define ROMIX_SPARSE_V_STACK_MAX    (419840-(6*1024))
-        scrypt_mixer<N,r,p,dkLen,ROMIX_SPARSE_V_STACK_MAX, ROMIX_SPARSE_V_MALLOC_MAX> mixer;
-        mixer.Mix(block, progress);
+        IO << "About to stack and malloc mix" << endl;
+        StackAndMallocMixer(block, progress);
     }
     #elif defined(ARDUINO_FEATHER_ESP32)
     scrypt_mixer<N,r,p,dkLen,0,131072> mixer;
@@ -66,6 +60,11 @@ const uint8_t * scrypt<N,r,p,dkLen>::hash( const uint8_t * passphrase, uint32_t 
     // Do final hash on the second salt
     Reset();
     m_final = new PBKDF2<HMAC<SHA256>,dkLen>(passphrase, passphrase_size, second_salt, mix_size, 1);
+    if ( m_final == 0 )
+    {
+        IO << F("Failed to create PBKDF2 final hash") << endl;
+        empw_exit(EXITCODE_NO_MEMORY);
+    }
 
     if (progress)(progress)(100);
     return m_final->result();
@@ -80,4 +79,25 @@ void scrypt<N,r,p,dkLen>::Reset(void)
         m_final = 0;
     }
 }
+///////////////////////////////////////////////////////////////////////////////////////////////////
+#if defined(ARDUINO_TEENSY40) || defined(ARDUINO_TEENSY41)
+template<uint32_t N, uint32_t r, uint32_t p, uint32_t dkLen>
+void scrypt<N,r,p,dkLen>::GlobalMixer(Salsa20Block* block, progress_func progress, uint32_t global_size)
+{
+    // If someone has been kind enough to solder a PSRAM chip or two on the boards
+    // we can use that to great effect
+    scrypt_mixer<N,r,p,dkLen,0, 0> mixer((Salsa20Block*)(0x70000000), global_size);
+    mixer.Mix(block, progress);
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+template<uint32_t N, uint32_t r, uint32_t p, uint32_t dkLen>
+void scrypt<N,r,p,dkLen>::StackAndMallocMixer(Salsa20Block* block, progress_func progress)
+{
+    //  Emperical testing has shown these values work on Teensy 4.0 or 4.1 without external PSRAM
+    #define ROMIX_SPARSE_V_MALLOC_MAX   (493568)
+    #define ROMIX_SPARSE_V_STACK_MAX    (419840-(50*1024))
+    scrypt_mixer<N,r,p,dkLen,ROMIX_SPARSE_V_STACK_MAX, ROMIX_SPARSE_V_MALLOC_MAX> mixer;
+    mixer.Mix(block, progress);
+}
+#endif
 ///////////////////////////////////////////////////////////////////////////////////////////////////

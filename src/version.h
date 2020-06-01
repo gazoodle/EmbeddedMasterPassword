@@ -33,16 +33,15 @@
 #ifndef _inc_version_h
 #define _inc_version_h
 
+
+#define EMPW_MAJOR_VERSION      0
+#define EMPW_MINOR_VERISON      1
+#define EMPW_PATCH              4
+
+
 #define _VERSION_STRINGIZE(x)    #x
 #define VERSION_STRINGIZE(x)    _VERSION_STRINGIZE(x)
 
-
-
-#define EMPW_VERSION        0.1
-#define EMPW_PATCH          2
-
-
-#define EMPW_VERSION_STRING VERSION_STRINGIZE(EMPW_VERSION) "." VERSION_STRINGIZE(EMPW_PATCH)
-
+#define EMPW_VERSION_STRING VERSION_STRINGIZE(EMPW_MAJOR_VERSION) "." VERSION_STRINGIZE(EMPW_MINOR_VERISON) "." VERSION_STRINGIZE(EMPW_PATCH)
 
 #endif

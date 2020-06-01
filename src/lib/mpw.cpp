@@ -124,8 +124,8 @@ const char * MPW_Template_Class_Characters(char c)
         case 'x':   return "AEIOUaeiouBCDFGHJKLMNPQRSTVWXYZbcdfghjklmnpqrstvwxyz0123456789!@#$%^&*()";
         case ' ':   return " ";
         default:
-            //IO << "Unhandled template character class `" << c << "`, exiting ..." << endl;
-            exit(-1);
+            IO << F("Unhandled template character class `") << c << F("`, exiting ...") << endl;
+            empw_exit(EXITCODE_LOGIC_FAULT);
     }
 }
 
@@ -136,6 +136,11 @@ MPW& MPW::login(const char *name, const char *password, progress_func progress)
     uint32_t name_len = strlen(name);
     uint32_t seed_buffer_len = sizeof(MPW_Scope_Authentication) - 1 + sizeof(uint32_t) + name_len;
     uint8_t *seed_buffer = (uint8_t*)malloc(seed_buffer_len);
+    if ( seed_buffer == 0 )
+    {
+        IO << F("Failed to allocate seed_buffer for MPW login") << endl;
+        empw_exit(EXITCODE_NO_MEMORY);
+    }
     // Fill the seed buffer
     memcpy( seed_buffer, MPW_Scope_Authentication, sizeof(MPW_Scope_Authentication)-1);
     push_int( &seed_buffer[sizeof(MPW_Scope_Authentication)-1], name_len );
@@ -173,6 +178,11 @@ MPW& MPW::site( const char * sitename, uint32_t site_counter )
     uint32_t sitename_len = strlen(sitename);
     uint32_t seed_buffer_len = sizeof(MPW_Scope_Authentication) - 1 + sizeof(uint32_t) + sitename_len + sizeof(uint32_t);
     uint8_t *seed_buffer = (uint8_t*)malloc(seed_buffer_len);
+    if ( seed_buffer == 0 )
+    {
+        IO << F("Failed to allocate seed_buffer for MPW site") << endl;
+        empw_exit(EXITCODE_NO_MEMORY);
+    }
 
     // Fill seed buffer
     memcpy( seed_buffer, MPW_Scope_Authentication, sizeof(MPW_Scope_Authentication) - 1 );
@@ -181,6 +191,11 @@ MPW& MPW::site( const char * sitename, uint32_t site_counter )
     push_int( &seed_buffer[sizeof(MPW_Scope_Authentication) - 1 + sizeof(uint32_t) + sitename_len], site_counter );
 
     m_site_key_holder = new HMAC<SHA256>(m_master_key, MASTER_KEY_LEN, seed_buffer, seed_buffer_len);
+    if ( m_site_key_holder == 0 )
+    {
+        IO << F("Failed to create HMAC for site") << endl;
+        empw_exit(EXITCODE_NO_MEMORY);
+    }
     m_site_key = m_site_key_holder->digest();
     // Allow fluent syntax
     return *this;
@@ -204,8 +219,8 @@ const char * MPW::get_password_template( MPM_Password_Type type )
         case BigPhrase: return MPW_Template_BigPhrase[m_site_key[0] % countof(MPW_Template_BigPhrase)];
 #endif
         default:
-            //IO << "Unhandled password template type (" << type << "), exit" << endl;
-            exit(-1);
+            IO << F("Unhandled password template type (") << type << F("), exit") << endl;
+            empw_exit(EXITCODE_LOGIC_FAULT);
     }
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -218,6 +233,11 @@ const char * MPW::generate( MPM_Password_Type type )
     if ( m_site_password != 0 )
         free(m_site_password);
     m_site_password = (char *)malloc(pwd_len+1);
+    if ( m_site_password == 0 )
+    {
+        IO << F("Failed to allocate password buffer") << endl;
+        empw_exit(EXITCODE_NO_MEMORY);
+    }
     memset(m_site_password,0,pwd_len+1);
     // Fill it up!
     for(uint8_t i=0;i<pwd_len;i++)

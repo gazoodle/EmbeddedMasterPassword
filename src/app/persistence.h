@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //
-//  pbkdf2.h - Header file for PBKDF2 implementation
+//  persistence.h - Header file for reading & writing persistence data
 //
 //  Copyright (C) 2020, Gazoodle (https://github.com/gazoodle)
 //
@@ -19,27 +19,43 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef _inc_pbkdf2_h
-#define _inc_pbkdf2_h
+#ifndef _inc_persistence_h
+#define _inc_persistence_h
 
 #include <stdint.h>
+#include "../lib/str_ptr.h"
 
-template<class HASH_ALGO, uint16_t dkLen>
-class PBKDF2
+#ifndef ARDUINO
+#define EEPROM_SIZE     1024
+#endif
+
+// Look at compression library
+// Look at using SD card on Teensy 4.1
+
+// Other
+
+class persistence
 {
-private:
-    PBKDF2(const PBKDF2& other) {}
 public:
-    PBKDF2(const uint8_t *password, uint32_t password_len, const uint8_t *salt, uint32_t salt_len, uint32_t c );
-    // Convenience constructor
-    PBKDF2(const char *password, const char *salt, uint32_t c ) : PBKDF2( reinterpret_cast<const uint8_t *>(password), strlen(password), reinterpret_cast<const uint8_t *>(salt), strlen(salt), c) {}
-    ~PBKDF2(void) { memset(m_key_buffer, 0, sizeof(m_key_buffer) );}
-    uint8_t * result(void) { return m_key_buffer; }
+    persistence(void);
+    ~persistence(void);
+
+    void        save(void);
+    void        load(void);
+
+    uint8_t     read8(void);
+    void        write8(uint8_t v);
+
+    str_ptr     readstr(void);
+    void        writestr(const str_ptr& s);
 
 private:
-    uint8_t m_key_buffer[dkLen];
+    bool        m_dirty;
+    uint16_t    m_index;
+#ifndef ARDUINO
+    uint8_t     EEPROM[EEPROM_SIZE];
+#endif
 };
 
-#include "pbkdf2-impl.h"
-
 #endif
+
