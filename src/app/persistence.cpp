@@ -35,7 +35,7 @@ persistence::persistence(void) : m_index(0)
 #ifdef ARDUINO
     IO << "EEPROM end is " << E2END << endl;
 #else
-    memset(EEPROM, 0xff, sizeof(EEPROM));
+    memset(EEPROM, UNINITIALIZED_EEPROM, sizeof(EEPROM));
     FILE *fp = fopen( DATA_FILE, "rb");
     if ( fp != 0 )
     {

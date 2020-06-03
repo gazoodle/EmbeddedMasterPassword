@@ -114,13 +114,46 @@ bool command::is_running(void)
     #endif
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//  handle_command can take multiple commands on the same line, separated by the command
+//  separator string (defaults to ";""). This allows clients that don't need the user/site
+//  state to be performed in a single call, e.g.
+//
+//      user 12345; site example.com; generate long
+//
+//      - Switch to user with token 12345
+//      - Select site example.com
+//      - Generate a long password
+//
 void command::handle_command(char * pcommand)
 {
-    #ifndef ARDUINO
+    // While there are commands to process ...
+    while( *pcommand != 0 )
+    {
+        char * start = pcommand;
+        // Hunt for command separator
+        while( *pcommand != 0 && *pcommand != ';' )
+            pcommand++;
+        // Zap it
+        if ( *pcommand != 0 )
+        {
+            *pcommand++ = 0;
+            while(*pcommand == ' ')
+                pcommand++;
+        }
+
+        // Dispatch this command
+        dispatch(start);
+    }
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+bool command::dispatch(char * pcommand)
+{
+ #ifndef ARDUINO
     if ( strncmp( pcommand, "exit", 5) == 0 )
     {
         m_is_running = false;
-        return;
+        return false;
     } 
     else if ( strncmp( pcommand, "save", 5 ) == 0 )
     {
@@ -161,7 +194,10 @@ void command::handle_command(char * pcommand)
     {
         IO << "Unhandled command [" << pcommand << "]. Please see help below for more information " << endl;
         handle_help();
+        return false;
     }
+
+    return true;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void command::handle_help(void)
@@ -219,7 +255,7 @@ uint8_t command::find_user(const char * uname, bool include_dynamic) const
     }
 
     // Didn't find the user ...
-    return 255;
+    return USER_NOT_FOUND;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 uint8_t command::find_user(uint32_t token) const
@@ -237,7 +273,7 @@ uint8_t command::find_user(uint32_t token) const
     }
 
     // Didn't find the user ...
-    return 255;
+    return USER_NOT_FOUND;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #ifndef ARDUINO
@@ -256,7 +292,7 @@ void command::handle_login(char * pdata)
     while(*pdata == ' ') pdata++;
 
     uint8_t user_index = find_user(uname, false);
-    if ( user_index == 255 )
+    if ( user_index == USER_NOT_FOUND )
     {
         // Dynamic/temp user already present, so this gets logged out
         if ( m_users[MAX_PERSISTENT_USERS] != 0 )
@@ -298,7 +334,7 @@ void command::handle_logout(char * pdata)
     sscanf(pdata, "%u", &token);
 
     uint8_t user_index = find_user(token);
-    if ( user_index == 255 )
+    if ( user_index == USER_NOT_FOUND )
     {
         IO << "Couldn't find user with token " << token << endl;
     }
@@ -315,7 +351,7 @@ void command::handle_switch_user(char * pdata)
     sscanf(pdata, "%u", &token);
 
     uint8_t user_index = find_user(token);
-    if ( user_index == 255 )
+    if ( user_index == USER_NOT_FOUND )
     {
         IO << "Couldn't find user with token " << token << endl;
     }
@@ -347,7 +383,7 @@ void command::handle_list_users(void)
 void command::handle_add_user(char * pdata)
 {
     uint8_t existing_user = find_user(pdata, false);
-    if ( existing_user != 255 )
+    if ( existing_user != USER_NOT_FOUND )
     {
         IO << "Cannot add user `" << pdata << "`. Already present in the system" << endl;
         return;
@@ -370,7 +406,7 @@ void command::handle_add_user(char * pdata)
 void command::handle_remove_user(char * pdata)
 {
     uint8_t existing_user = find_user(pdata, false);
-    if ( existing_user == 255 )
+    if ( existing_user == USER_NOT_FOUND )
     {
         IO << "Cannot find user `" << pdata << "` to remove." << endl;
         return;
@@ -432,7 +468,7 @@ void command::load(void)
     persistence p;
     
     uint8_t file_version = p.read8();
-    if ( file_version == 255 )
+    if ( file_version == UNINITIALIZED_EEPROM )
         return;
 
     if ( file_version != 0 )

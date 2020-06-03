@@ -28,6 +28,8 @@
 #ifndef ARDUINO
 #define EEPROM_SIZE     1024
 #endif
+#define UNINITIALIZED_EEPROM        (0xff)
+
 
 // Look at compression library
 // Look at using SD card on Teensy 4.1

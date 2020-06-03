@@ -28,9 +28,9 @@
 #include <algorithm>
 
 
-#define MAX_PERSISTENT_USERS        9
-#define MAX_COMMAND_LINE_LENGTH     180
-
+#define MAX_PERSISTENT_USERS        (9)
+#define MAX_COMMAND_LINE_LENGTH     (180)
+#define USER_NOT_FOUND              (255)
 
 class command
 {
@@ -46,6 +46,7 @@ public:
 private:
     void banner(void);
     void reset(void);
+    bool dispatch(char * pcommand);
 
     // Command functions
     void handle_help(void);
