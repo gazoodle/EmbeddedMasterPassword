@@ -300,41 +300,47 @@ typedef struct {
     const char *            site;
     uint32_t                counter;
     MPM_Password_Type       type;
+    const char *            context;
+    const char *            scope;
     const char *            expected;
 } MPW_Test_Data;
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 MPW_Test_Data test_data[] = {
-    //  user                    password                    site                        count       type            expected
-    {   "user",                 "password",                 "example.com",              1,          Long,           "ZedaFaxcZaso9*" },
-    {   0,                      0,                          0,                          0,          Phrase,         "ze juzxo sax taxocre" },
-    {   0,                      0,                          0,                          0,          Name,           "zedjuzoco" },
-    {   0,                      0,                          0,                          0,          Maximum,        "pf4zS1LjCg&LjhsZ7T2~" },
-    {   0,                      0,                          0,                          0,          Medium,         "ZedJuz8$" },
-    {   0,                      0,                          0,                          0,          Basic,          "pIS54PLs" },
-    {   0,                      0,                          0,                          0,          Short,          "Zed5" },
-    {   0,                      0,                          0,                          0,          PIN,            "6685" },
-    {   0,                      0,                          0,                          2,          Long,           "Fovi2@JifpTupx" },
-    {   0,                      0,                          0,                          3,          Long,           "KizcQuho9[Xicu" },
-    {   0,                      0,                          0,                          4,          Long,           "DoztXidwBogi1]" },
-    {   0,                      0,                          0,                          40,         Long,           "Kozt3;DiduKagq" },
+    //  user                    password                    site                        count       type        context         scope                       expected
+    {   "user",                 "password",                 "example.com",              1,          Long,       NULL,           MPW_Scope_Authentication,   "ZedaFaxcZaso9*" },
+    {   0,                      0,                          0,                          0,          Phrase,     NULL,           0,                          "ze juzxo sax taxocre" },
+    {   0,                      0,                          0,                          0,          Name,       NULL,           0,                          "zedjuzoco" },
+    {   0,                      0,                          0,                          0,          Maximum,    NULL,           0,                          "pf4zS1LjCg&LjhsZ7T2~" },
+    {   0,                      0,                          0,                          0,          Medium,     NULL,           0,                          "ZedJuz8$" },
+    {   0,                      0,                          0,                          0,          Basic,      NULL,           0,                          "pIS54PLs" },
+    {   0,                      0,                          0,                          0,          Short,      NULL,           0,                          "Zed5" },
+    {   0,                      0,                          0,                          0,          PIN,        NULL,           0,                          "6685" },
+    {   0,                      0,                          0,                          0,          Name,       NULL,           MPW_Scope_Identification,   "vohlijohe" },
+    {   0,                      0,                          0,                          0,          Phrase,     NULL,           MPW_Scope_Recovery,         "yar guqmeqiti kuco" },
+    {   0,                      0,                          0,                          0,          Phrase,     "maiden",       MPW_Scope_Recovery,         "jan vetdozera levo" },
+    {   0,                      0,                          0,                          0,          Phrase,     "pet",          MPW_Scope_Recovery,         "norb hog mujneji vaf" },
+    {   0,                      0,                          0,                          2,          Long,       NULL,           MPW_Scope_Authentication,   "Fovi2@JifpTupx" },
+    {   0,                      0,                          0,                          3,          Long,       NULL,           0,                          "KizcQuho9[Xicu" },
+    {   0,                      0,                          0,                          4,          Long,       NULL,           0,                          "DoztXidwBogi1]" },
+    {   0,                      0,                          0,                          40,         Long,       NULL,           0,                          "Kozt3;DiduKagq" },
 
-    {   "once",                 "twice",                    "three",                    1,          Long,           "Bopt6[PakaQile" },
+    {   "once",                 "twice",                    "three",                    1,          Long,       NULL,           0,                          "Bopt6[PakaQile" },
 
-    {   "Robert Lee Mitchell",  "banana colored duckling",  "masterpasswordapp.com",    1,          Long,           "Jejr5[RepuSosp" },
-    {   0,                      0,                          0,                          0,          Maximum,        "W6@692^B1#&@gVdSdLZ@" },
-    {   0,                      0,                          0,                          0,          Medium,         "Jej2$Quv" },
-    {   0,                      0,                          0,                          0,          Basic,          "WAo2xIg6" },
-    {   0,                      0,                          0,                          0,          Short,          "Jej2" },
-    {   0,                      0,                          0,                          0,          PIN,            "7662" },
-    {   0,                      0,                          0,                          0,          Name,           "jejraquvo" },
-    {   0,                      0,                          0,                          0,          Phrase,         "jejr quv cabsibu tam" },
-    {   0,                      0,                          "twitter.com",              1,          Long,           "PozoLalv0_Yelo" },
+    {   "Robert Lee Mitchell",  "banana colored duckling",  "masterpasswordapp.com",    1,          Long,       NULL,           0,                          "Jejr5[RepuSosp" },
+    {   0,                      0,                          0,                          0,          Maximum,    NULL,           0,                          "W6@692^B1#&@gVdSdLZ@" },
+    {   0,                      0,                          0,                          0,          Medium,     NULL,           0,                          "Jej2$Quv" },
+    {   0,                      0,                          0,                          0,          Basic,      NULL,           0,                          "WAo2xIg6" },
+    {   0,                      0,                          0,                          0,          Short,      NULL,           0,                          "Jej2" },
+    {   0,                      0,                          0,                          0,          PIN,        NULL,           0,                          "7662" },
+    {   0,                      0,                          0,                          0,          Name,       NULL,           0,                          "jejraquvo" },
+    {   0,                      0,                          0,                          0,          Phrase,     NULL,           0,                          "jejr quv cabsibu tam" },
+    {   0,                      0,                          "twitter.com",              1,          Long,       NULL,           0,                          "PozoLalv0_Yelo" },
 
 #ifdef ENABLE_MPW_EXTENSIONS
     // Non-standard tests and extensions
-    {   "user",                 "password",                 "example.com",              1,          PIN_Six,        "668545" },
-    {   0,                      0,                          0,                          1,          Vast,           "pf4zS1LjCg&LjhsZ7T6p(nC&cwLM7#" },
-    {   0,                      0,                          0,                          1,          BigPhrase,      "ze juzxo sax taxocre zeswojojo jiv sec" },
+    {   "user",                 "password",                 "example.com",              1,          PIN_Six,    NULL,           0,                          "668545" },
+    {   0,                      0,                          0,                          1,          Vast,       NULL,           0,                          "pf4zS1LjCg&LjhsZ7T6p(nC&cwLM7#" },
+    {   0,                      0,                          0,                          1,          BigPhrase,  NULL,           0,                          "ze juzxo sax taxocre zeswojojo jiv sec" },
 #endif
 };
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -343,32 +349,42 @@ void test_MPW(void)
     MPW_Test_Data   td = {0};
     MPW             mpw;
 
+    {
+        mpw.login("user", "password", NULL);
+        const char * r = mpw.generate("example.com", 1, MPM_Password_Type::Phrase, NULL, MPW_Scope_Recovery );
+        IO << "Recovery 1`" << r << "`" << endl;
+        const char * r2 = mpw.generate("example.com", 1, MPM_Password_Type::Phrase, "maiden", MPW_Scope_Recovery );
+        IO << "Recovery 2`" << r2 << "`" << endl;
+        const char * r3 = mpw.generate("example.com", 1, MPM_Password_Type::Phrase, "pet", MPW_Scope_Recovery );
+        IO << "Recovery 2`" << r3 << "`" << endl;
+        const char * u = mpw.generate("example.com", 1, MPM_Password_Type::Name, NULL, MPW_Scope_Identification );
+        IO << "User `" << u << "`" << endl;
+    }
+
     // Run over the test matrix, gather the test data into a local copy...
     for(unsigned int i=0; i<countof(test_data); i++)
     {
         // Should the Master Password generator be logged in ?
         bool login = ( test_data[i].user != 0) | ( test_data[i].password != 0 );
-        // Should the Master Password generator be initialized ?
-        bool init = ( test_data[i].site != 0 ) | ( test_data[i].counter != 0 );
 
         td.user     = test_data[i].user ? test_data[i].user : td.user;
         td.password = test_data[i].password ? test_data[i].password : td.password;
         td.site     = test_data[i].site ? test_data[i].site : td.site;
         td.counter  = test_data[i].counter ? test_data[i].counter : td.counter;
         td.type     = test_data[i].type;
+        td.context  = test_data[i].context;
+        td.scope    = test_data[i].scope ? test_data[i].scope : td.scope;
         td.expected = test_data[i].expected;
 
         if ( login )
             mpw.login(td.user, td.password, 0);
-        if ( login || init )
-            mpw.site(td.site, td.counter);
         
-        const char* password = mpw.generate(td.type);
+        const char* password = mpw.generate(td.site, td.counter, td.type, td.context, td.scope );
         bool matched = strcmp( password, td.expected ) == 0;
 
         IO  << "Test " << i+1 << ": User(" << td.user << "," << td.password << ")"
-            << " -> Site(" << td.site << "," << td.counter << ")"
-            << " -> Password(" << td.type << ") == `" << password << "`"
+            << " -> generate(" << td.site << "," << td.counter << ","
+            << td.type << "," << (td.context ? td.context : "NULL") << "," << td.scope << ") == `" << password << "`"
             << " [Expected `" << td.expected << "`] -> " << (matched ? "✓" : "❎")
             << endl;
 

@@ -34,7 +34,7 @@
 #define SCRYPT_P                    2
 
 typedef enum {
-    Maximum = 0,
+    Maximum = 1,
     Long,
     Medium,
     Basic,
@@ -52,13 +52,17 @@ typedef enum {
 
 } MPM_Password_Type;
 
+#define MPW_USERNAME_COUNTER    (1)
+#define MPW_USERNAME_TYPE       (Name)
+#define MPW_RECOVERY_COUNTER    (1)
+#define MPW_RECOVERY_TYPE       (Phrase)
 
 class MPW
 {
 private:
     MPW(const MPW& other){}
 public:
-    MPW(void) : m_master_key(0), m_site_key_holder(0), m_site_key(0), m_site_password(0) {}
+    MPW(void) : m_master_key(0), m_site_password(0) {}
     ~MPW(void) { logout(); }
 
     // User managment
@@ -67,14 +71,11 @@ public:
     bool        is_logged_in(void) const { return m_master_key != 0; }
     uint32_t    get_login_token(void) const;
 
-    // Site management
-    MPW&        site(const char *site_name, uint32_t site_counter);
-
-    // Password management
-    const char * generate( MPM_Password_Type type );
+    // Generate response
+    const char * generate( const char *site_name, uint32_t site_counter, MPM_Password_Type type, const char * context, const char * scope );
 
 private:
-    const char * get_password_template( MPM_Password_Type type );
+    const char * get_password_template( uint8_t c, MPM_Password_Type type );
 
 private:
     void push_int( uint8_t *buf, uint32_t val )
@@ -88,13 +89,13 @@ private:
 private:
     scrypt<SCRYPT_N, SCRYPT_R, SCRYPT_P, MASTER_KEY_LEN>        m_master_key_holder;
     const uint8_t*                                              m_master_key;
-
-    HMAC<SHA256>*                                               m_site_key_holder;
-    const uint8_t*                                              m_site_key;
-
     char *                                                      m_site_password;
 };
 
-#define MPW_Scope_Authentication "com.lyndir.masterpassword"
+
+#define MPW_Namespace               "com.lyndir.masterpassword"
+#define MPW_Scope_Authentication    MPW_Namespace
+#define MPW_Scope_Identification    MPW_Scope_Authentication ".login"
+#define MPW_Scope_Recovery          MPW_Scope_Authentication ".answer"
 
 #endif

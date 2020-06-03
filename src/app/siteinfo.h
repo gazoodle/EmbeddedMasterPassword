@@ -19,54 +19,54 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef _inc_userinfo_h
-#define _inc_userinfo_h
+#ifndef _inc_siteinfo_h
+#define _inc_siteinfo_h
 
+#include "persistence.h"
 #include "../lib/mpw.h"
 #include "../lib/str_ptr.h"
-#include "persistence.h"
-#include "siteinfo.h"
 #include <vector>
 
-class userinfo
+#define SITEINFO_HAS_USERNAME       0x01
+#define SITEINFO_HAS_RECOVERY       0x02
+#define SITEINFO_HAS_ANSWERS        0x04
+#define SITEINFO_REQUIRES_LOGIN     0x08
+
+class siteinfo
 {
-private:
-    userinfo() {}
-    userinfo(const userinfo& other) {}
 public:
-    userinfo(const char * username) : m_username(username) {}
-    userinfo(const str_ptr& username) : m_username(username) {}
-    ~userinfo(){}
+    siteinfo(str_ptr sitename, uint8_t counter, MPM_Password_Type style) : m_sitename(sitename), m_counter(counter), m_style(style), m_options(0) {}
+    siteinfo(const siteinfo& other) : m_sitename(other.m_sitename), m_counter(other.m_counter), m_style(other.m_style), m_options(other.m_options), m_answer_words(other.m_answer_words) {}
 
-    bool                    is_user(const char * u) const   { return m_username == u; }
-    const char *            get_user_name(void)     const   { return m_username; }
-    MPW&                    get_mpw(void)                   { return m_mpw; }
-    std::vector<siteinfo>&  get_sites(void)                 { return m_sites; }
+    const char *            get_sitename(void) const    { return m_sitename; }
+    uint8_t                 get_counter(void) const     { return m_counter; }
+    MPM_Password_Type       get_style(void) const       { return m_style; }
+    uint8_t                 get_options(void) const     { return m_options; }
 
-    static userinfo *       load(persistence& p);
+    static siteinfo         load(persistence& p);
     void                    save(persistence& p) const;
 
 private:
-    MPW                     m_mpw;
-    str_ptr                 m_username;
-    std::vector<siteinfo>   m_sites;
+    str_ptr                 m_sitename;
+    uint8_t                 m_counter;
+    MPM_Password_Type       m_style;
+    uint8_t                 m_options;
+    std::vector<str_ptr>    m_answer_words;
 };
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-inline userinfo * userinfo::load(persistence& p)
+inline siteinfo siteinfo::load(persistence& p)
 {
-    userinfo * retval = new userinfo(p.readstr());
-    uint8_t site_count = p.read8();
-    for(int i=0;i<site_count;i++)
-        retval->m_sites.push_back(siteinfo::load(p));
-    return retval;
+    auto site = p.readstr();
+    auto count = p.read8();
+    auto style = p.read8();
+    return siteinfo(site, count, (MPM_Password_Type)style);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-inline void userinfo::save(persistence& p) const
+inline void siteinfo::save(persistence& p) const
 {
-    p.writestr(m_username);
-    p.write8(m_sites.size());
-    for( std::vector<siteinfo>::const_iterator i=m_sites.begin(); i!=m_sites.end(); i++)
-        i->save(p);
+    p.writestr(m_sitename);
+    p.write8(m_counter);
+    p.write8(m_style);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 

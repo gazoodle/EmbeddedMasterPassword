@@ -76,7 +76,7 @@ inline str_ptr::~str_ptr(void)
     if ( decrement() > 0 )
         return;
     // Debugging point to help track string leaks during development
-    //IO << "Free string [" << m_ptr+1 << "]" << endl;
+    // IO << "Free string [" << m_ptr+1 << "]" << endl;
     free(m_ptr);
     m_ptr = 0;
 }

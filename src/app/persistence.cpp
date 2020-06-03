@@ -60,6 +60,28 @@ persistence::~persistence(void)
 #endif
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+void persistence::erase(void)
+{
+    while( has_space() )
+    {
+        uint8_t v = read8();
+        if ( v != UNINITIALIZED_EEPROM )
+        {
+            m_index--;
+            write8(UNINITIALIZED_EEPROM);
+        }
+    }
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+bool persistence::has_space(void)
+{
+    #ifdef ARDUINO
+    return ( m_index < E2END );
+    #else
+    return ( m_index < sizeof(EEPROM) );
+    #endif
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
 uint8_t persistence::read8(void)
 {
     return EEPROM[m_index++];
@@ -67,6 +89,11 @@ uint8_t persistence::read8(void)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void    persistence::write8(uint8_t v)
 {
+    if ( !has_space() )
+    {
+        IO << "Cannot write any more to the persistent storage, there is no space left" << endl;
+        empw_exit(EXITCODE_NO_MEMORY);
+    }
     EEPROM[m_index++] = v;
     m_dirty = true;
 }

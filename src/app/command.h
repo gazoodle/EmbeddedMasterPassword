@@ -44,13 +44,16 @@ public:
     void handle_command(char * pcommand);
 
 private:
+    void release_users(void);
     void banner(void);
     void reset(void);
     bool dispatch(char * pcommand);
+    MPM_Password_Type get_style(const char * style);
 
     // Command functions
     void handle_help(void);
     void handle_reset(void);
+    void handle_erase(void);
     
     // User commands
     void handle_login(char * pdata);
@@ -60,9 +63,13 @@ private:
     void handle_add_user(char * pdata);
     void handle_remove_user(char * pdata);
 
-    void handle_site(char * pdata);
+    // Site commands
+    void handle_add_site(char * pdata);
+    void handle_list_sites(void);
+    void handle_removeall(void);
 
-    void handle_generate(char * pdata);
+    // Generate commands
+    void handle_site(char * pdata);
 
 private:
     uint8_t find_user(const char * uname, bool include_dynamic) const;

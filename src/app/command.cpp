@@ -20,7 +20,13 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "command.h"
+#include <string.h>
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+#define SKIP_WHITESPACE(p)      while((*p == ' ') || (*p == '\t')) p++;
+///////////////////////////////////////////////////////////////////////////////////////////////////
+#define COMMAND_SEPARATOR       ";"
+#define ARGUMENT_SEPARATOR      ","
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 command::command(void)
 {
@@ -28,6 +34,11 @@ command::command(void)
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 command::~command(void)
+{
+    release_users();
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void command::release_users(void)
 {
     for(uint8_t i=0;i<countof(m_users);i++)
     {
@@ -127,23 +138,17 @@ bool command::is_running(void)
 //
 void command::handle_command(char * pcommand)
 {
-    // While there are commands to process ...
-    while( *pcommand != 0 )
-    {
-        char * start = pcommand;
-        // Hunt for command separator
-        while( *pcommand != 0 && *pcommand != ';' )
-            pcommand++;
-        // Zap it
-        if ( *pcommand != 0 )
-        {
-            *pcommand++ = 0;
-            while(*pcommand == ' ')
-                pcommand++;
-        }
+    SKIP_WHITESPACE(pcommand);
 
+    char * saveptr;
+    char * token = strtok_r( pcommand, COMMAND_SEPARATOR, &saveptr );
+    // While there are commands to process ...
+    while( token != NULL )
+    {
+        SKIP_WHITESPACE(token);
         // Dispatch this command
-        dispatch(start);
+        dispatch(token);
+        token = strtok_r( NULL, COMMAND_SEPARATOR, &saveptr );
     }
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -179,17 +184,30 @@ bool command::dispatch(char * pcommand)
     else if ( strncmp( pcommand, "removeuser ", 11) == 0 )
         handle_remove_user(pcommand+11);
 
+    //
+    //  Sites
+    //  =====
+    else if ( strncmp( pcommand, "addsite ", 8) == 0 )
+        handle_add_site(pcommand+8);
+    else if ( strncmp( pcommand, "sites", 6 ) == 0 )
+        handle_list_sites();
+    else if ( strncmp( pcommand, "removeall", 10 ) == 0 )
+        handle_removeall();
 
-
-
-    else if ( strncmp( pcommand, "help", 5 ) == 0 )        // Includes \0 to avoid matching substrings
-        handle_help();
-    else if ( strncmp( pcommand, "reset", 6 ) == 0 )       // Includes \0 to avoid matching substrings
-        handle_reset();
-    else if ( strncmp( pcommand, "site ", 5 ) == 0)
+    //
+    //  Generation
+    //
+    else if ( strncmp( pcommand, "site ", 5) == 0 )
         handle_site(pcommand+5);
-    else if ( strncmp( pcommand, "generate ", 8 ) ==  0)
-        handle_generate(pcommand+8);
+
+
+
+    else if ( strncmp( pcommand, "help", 5 ) == 0 )         // Includes \0 to avoid matching substrings
+        handle_help();
+    else if ( strncmp( pcommand, "reset", 6 ) == 0 )        // Includes \0 to avoid matching substrings
+        handle_reset();
+    else if ( strncmp( pcommand, "erase", 6) == 0 )         // Includes \0 to avoid matching substrings
+        handle_erase();
     else
     {
         IO << "Unhandled command [" << pcommand << "]. Please see help below for more information " << endl;
@@ -205,36 +223,48 @@ void command::handle_help(void)
     IO
         << F("Users") << endl 
         << F("-----") << endl
-        << F("login <user>, <password>       - Login <user> with <password>") << endl
-        << F("logout <token>                 - Logout user <token>") << endl
-        << F("user <token>                   - Switch to user <token>") << endl
-        << F("users                          - List remembered users") << endl
-        << F("adduser <user>                 - Add <user> to the remembered user list") << endl
-        << F("removeuser <user>              - Remove <user> from the remembered user list") << endl
+        << F("login <user>, <password>      - Login <user> with <password>") << endl
+        << F("logout <token>                - Logout user <token>") << endl
+        << F("user <token>                  - Switch to user <token>") << endl
+        << F("users                         - List remembered users") << endl
+        << F("adduser <user>                - Add <user> to the remembered user list") << endl
+        << F("removeuser <user>             - Remove <user> from the remembered user list") << endl
         << endl
         << endl
         << F("Sites") << endl
         << F("-----") << endl
-        << F("site <site>[, <counter>]       - Generate site key for <site> with instance counter <counter>") << endl
-        << F("sites                          - List remembered sites for current user") << endl
-        << F("addsite <site>[, <counter>]    - Add/Update remembered site <site> with instance counter <counter>") << endl
-        << F("removesite <site>              - Remove remebered site <site> for current user") << endl
-        << F("removeall                      - Remove all sites for current user") << endl
+        << F("sites                         - List remembered sites for current user") << endl
+        << F("addsite <site>                - Add remembered site <site>") << endl
+        << F("removesite <site>             - Remove remembered site <site> for current user") << endl
+        << F("setcounter <site>, <counter>  - Set <site> counter to <counter> (Defaults to 1)") << endl
+        << F("settype <site>, <type>        - Set <site> password type to <type> (Defaults to Long)") << endl
+        << F("hasusername <site>            - Add a generated username to <site> (Defaults to false)") << endl
+        << F("hasrecovery <site>            - Add a generated recovery phrase to <site>" ) << endl
+        << F("addanswer <site>, <word>      - Add a generated recovery phrase based on <word> to <site>") << endl
+        << F("requirelogin <site>           - Require the user to login again to generate information for <site>") << endl
+        << F("removeall                     - Remove all sites for current user") << endl
         << endl
         << endl
-        << F("Password") << endl
-        << F("--------") << endl
-        << F("generate [<style>]             - Generate password for current user & site in the style <style> specified") << endl
-		<< F("                                 <style> is one of Maximum, Long (Default), Medium, Basic, Short,") << endl 
-        << F("                                                   PIN, Name, Phrase") << endl
+        << F("Passwords etc") << endl
+        << F("-------------") << endl
+        << F("site <site>                   - Generate passwords, usernames, and recovery answers for the site <site>")
         << endl
         << endl
         << F("Maintenance") << endl
         << F("-----------") << endl
-        << F("exit                           - Exit the EMPW program (only available on cli version)") << endl
-        << F("reset                          - Reset EMPW program (users need to log in again)") << endl
-        << F("erase                          - Erase all remembered sites for all users") << endl
-        << F("help                           - Show this help screen") << endl
+        << F("exit                          - Exit the EMPW program (only available on cli version)") << endl
+        << F("reset                         - Reset EMPW program (users need to log in again)") << endl
+        << F("erase                         - Erase all remembered sites for all users") << endl
+        << F("help                          - Show this help screen") << endl
+        << endl
+        << endl
+        << F("Multiple commands can be issued in one go, separated by ';', e.g.") << endl
+        << endl
+        << F("  user 12345; example.com") << endl
+        << endl
+        << F("  - Switch to user with token 12345") << endl
+        << F("  - Generate security info for example.com") << endl
+
         << endl;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -278,18 +308,27 @@ uint8_t command::find_user(uint32_t token) const
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #ifndef ARDUINO
 #include <ctime>
-#endif
+#endif 
 void command::handle_login(char * pdata)
 {
-    m_current_user = 0;
+    m_current_user = NULL;
 
-    // Expects <user>,[ ]<password>
-    const char * uname = pdata;
-    while(*pdata && *pdata!=',')
-        pdata++;
-    if (*pdata == ',')
-        *pdata++ = '\0';
-    while(*pdata == ' ') pdata++;
+    // Expects <user>,<password>
+    SKIP_WHITESPACE(pdata);
+    char * saveptr;
+    const char * uname = strtok_r(pdata, ARGUMENT_SEPARATOR, &saveptr);
+    if ( uname == NULL )
+    {
+        IO << F("Expected user name") << endl;
+        return;
+    }
+    const char * pwd = strtok_r(NULL, ARGUMENT_SEPARATOR, &saveptr);
+    if ( pwd == NULL )
+    {
+        IO << F("Expected password") << endl;
+        return;
+    }
+    SKIP_WHITESPACE(pwd);
 
     uint8_t user_index = find_user(uname, false);
     if ( user_index == USER_NOT_FOUND )
@@ -308,7 +347,7 @@ void command::handle_login(char * pdata)
     #else
     std::clock_t start = 0;
     #endif
-    m_current_user->get_mpw().login(uname, pdata,
+    m_current_user->get_mpw().login(uname, pwd,
         [&] (uint8_t percent) {
             #ifdef ARDUINO
             if ( ( millis() - start ) > 1000 )
@@ -330,9 +369,8 @@ void command::handle_login(char * pdata)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void command::handle_logout(char * pdata)
 {
-    uint32_t token;
-    sscanf(pdata, "%u", &token);
-
+    SKIP_WHITESPACE(pdata);
+    uint32_t token = atoi(pdata);
     uint8_t user_index = find_user(token);
     if ( user_index == USER_NOT_FOUND )
     {
@@ -347,9 +385,8 @@ void command::handle_logout(char * pdata)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void command::handle_switch_user(char * pdata)
 {
-    uint32_t token;
-    sscanf(pdata, "%u", &token);
-
+    SKIP_WHITESPACE(pdata);
+    uint32_t token = atoi(pdata);
     uint8_t user_index = find_user(token);
     if ( user_index == USER_NOT_FOUND )
     {
@@ -382,6 +419,7 @@ void command::handle_list_users(void)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void command::handle_add_user(char * pdata)
 {
+    SKIP_WHITESPACE(pdata);
     uint8_t existing_user = find_user(pdata, false);
     if ( existing_user != USER_NOT_FOUND )
     {
@@ -405,6 +443,7 @@ void command::handle_add_user(char * pdata)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void command::handle_remove_user(char * pdata)
 {
+    SKIP_WHITESPACE(pdata);
     uint8_t existing_user = find_user(pdata, false);
     if ( existing_user == USER_NOT_FOUND )
     {
@@ -417,6 +456,110 @@ void command::handle_remove_user(char * pdata)
     save();
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+int strcmpi(const char * s1, const char * s2)
+{
+    size_t l1 = strlen(s1);
+    size_t l2 = strlen(s2);
+    if (l1 != l2)
+        return l1-l2;
+    while(l1--)
+    {
+        char c1 = tolower(*s1++);
+        char c2 = tolower(*s2++);
+        if ( c1 != c2)
+            return c1-c2;
+    }
+    return 0;
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+MPM_Password_Type command::get_style(const char * style)
+{
+    SKIP_WHITESPACE(style);
+
+    #define _S(x) #x
+    #define S(x) _S(x)
+    #define CHECK_STYLE(s, e)   { if ( strcmpi( style, S(e)) == 0 ) return e; }
+
+    CHECK_STYLE(s, Basic);
+    CHECK_STYLE(s, Long);
+    CHECK_STYLE(s, Maximum);
+    CHECK_STYLE(s, Medium);
+    CHECK_STYLE(s, Name);
+    CHECK_STYLE(s, Phrase);
+    CHECK_STYLE(s, PIN);
+    CHECK_STYLE(s, Short);
+
+    int i = atoi(style);
+    if ( i > 0 )
+        return (MPM_Password_Type)i;
+
+    // If all else fails, assume as long password
+    return MPM_Password_Type::Long;
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void command::handle_add_site(char * pdata)
+{
+    if ( m_current_user == 0 )
+    {
+        IO << F("No current user, please login") << endl;
+        return;
+    }
+
+    // Expects <site>, <counter>, <style>
+    SKIP_WHITESPACE(pdata);
+    char * saveptr;
+    const char * site = strtok_r( pdata, ARGUMENT_SEPARATOR, &saveptr );
+    if ( site == NULL )
+    {
+        IO << F("Expected site name") << endl;
+        return;
+    }
+    const char * counter = strtok_r( NULL, ARGUMENT_SEPARATOR, &saveptr );
+    if ( counter == NULL )
+    {
+        IO << F("Expected counter") << endl;
+        return;
+    }
+    SKIP_WHITESPACE(counter);
+    const char * style = strtok_r( NULL, ARGUMENT_SEPARATOR, &saveptr );
+    if ( style == NULL )
+    {
+        IO << F("Expected style") << endl;
+        return;
+    }
+    SKIP_WHITESPACE(style);
+
+    IO << "add site [" << site << "] counter [" << counter << "] style [" << style << "]" << endl;
+    m_current_user->get_sites().push_back(siteinfo(site, atoi(counter), get_style(style)));
+    save();
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void command::handle_list_sites(void)
+{
+    if ( m_current_user == 0 )
+    {
+        IO << F("No current user, please login") << endl;
+        return;
+    }
+
+    for(std::vector<siteinfo>::const_iterator i=m_current_user->get_sites().begin(); i!=m_current_user->get_sites().end(); i++)
+    {
+        IO << i->get_sitename() << "/" << i->get_counter() << "/" << i->get_style() << endl;
+    }
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void command::handle_removeall(void)
+{
+    if ( m_current_user == 0 )
+    {
+        IO << F("No current user, please login") << endl;
+        return;
+    }
+
+    m_current_user->get_sites().clear();
+    save();
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
 void command::handle_site(char * pdata)
 {
     if ( m_current_user == 0 )
@@ -425,31 +568,15 @@ void command::handle_site(char * pdata)
         return;
     }
 
-    // Expects <site>,<counter>
-    const char * site = pdata;
-    while(*pdata && *pdata!=',')
-        pdata++;
-    if (*pdata == ',')
-        *pdata++ = '\0';
-    while(*pdata == ' ') pdata++;
-    uint32_t counter=1;
-    sscanf(pdata, "%u", &counter);
-    m_current_user->get_mpw().site(site, counter);
-    IO << F("Using site [") << site << F("]") << endl;
-}
-///////////////////////////////////////////////////////////////////////////////////////////////////
-void command::handle_generate(char * pdata)
-{
-    if ( m_current_user == 0 )
-    {
-        IO << F("No current user selected or logged in") << endl;
-        return;
-    }
+    // Expects <site>
+    SKIP_WHITESPACE(pdata);
 
-    int token;
-    sscanf(pdata, "%d", &token);
+    // Locate site in user info if possible
 
-    IO << m_current_user->get_mpw().generate((MPM_Password_Type)token) << endl;
+
+    IO << "user: " << m_current_user->get_mpw().generate( pdata, MPW_USERNAME_COUNTER, MPW_USERNAME_TYPE, NULL, MPW_Scope_Identification ) << endl;
+    IO << "password: " << m_current_user->get_mpw().generate( pdata, 1, Long, NULL, MPW_Scope_Authentication ) << endl;
+    IO << "recovery: " << m_current_user->get_mpw().generate( pdata, MPW_RECOVERY_COUNTER, MPW_RECOVERY_TYPE, NULL, MPW_Scope_Recovery ) << endl;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void command::handle_reset(void)
@@ -461,6 +588,13 @@ void command::handle_reset(void)
     // https://forum.pjrc.com/threads/59935-Reboot-Teensy-programmatically?p=232143&viewfull=1#post232143
     SCB_AIRCR = 0x05FA0004;
 #endif
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void command::handle_erase(void)
+{
+    release_users();
+    persistence p;
+    p.erase();
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void command::load(void)

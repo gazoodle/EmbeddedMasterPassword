@@ -42,11 +42,11 @@ public:
     persistence(void);
     ~persistence(void);
 
-    void        save(void);
-    void        load(void);
+    void        erase(void);
 
     uint8_t     read8(void);
     void        write8(uint8_t v);
+    bool        has_space(void);
 
     str_ptr     readstr(void);
     void        writestr(const str_ptr& s);
