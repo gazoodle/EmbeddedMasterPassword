@@ -68,6 +68,11 @@ private:
     void handle_list_sites(void);
     void handle_removeall(void);
     void handle_setcounter(char * pdata);
+    void handle_settype(char * pdata);
+    void handle_sethasusername(char * pdata);
+    void handle_sethasrecovery(char * pdata);
+    void handle_addanswer(char * pdata);
+    void handle_removeanswer(char * pdata);
 
     // Generate commands
     void handle_site(char * pdata);
@@ -76,7 +81,7 @@ private:
     bool        check_login(void) const;
     uint8_t     find_user(const char * uname, bool include_dynamic) const;
     uint8_t     find_user(uint32_t token) const;
-    siteinfo*   find_site(const char * sitename);
+    siteinfo*   find_site(const char * sitename, bool show_complaint_on_failure);
     void        load(void);
     void        save(void);
 

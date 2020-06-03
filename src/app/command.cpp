@@ -208,7 +208,16 @@ bool command::dispatch(char * pcommand)
         handle_removeall();
     else if ( strncmp( pcommand, "setcounter ", 11) == 0 )
         handle_setcounter(pcommand+11);
-
+    else if ( strncmp( pcommand, "settype ", 8) == 0 )
+        handle_settype(pcommand+8);
+    else if ( strncmp( pcommand, "sethasusername ", 15) == 0 )
+        handle_sethasusername(pcommand+15);
+    else if ( strncmp( pcommand, "sethasrecovery ", 15) == 0 )
+        handle_sethasrecovery(pcommand+15);
+    else if ( strncmp( pcommand, "addanswer ", 10) == 0 )
+        handle_addanswer(pcommand+10);
+    else if ( strncmp( pcommand, "removeanswer ", 13) == 0 )
+        handle_removeanswer(pcommand+13);
 
     //
     //  Generation
@@ -239,39 +248,40 @@ void command::handle_help(void)
     IO
         << F("Users") << endl 
         << F("-----") << endl
-        << F("login <user>, <password>      - Login <user> with <password>") << endl
-        << F("logout <token>                - Logout user <token>") << endl
-        << F("user <token>                  - Switch to user <token>") << endl
-        << F("users                         - List remembered users") << endl
-        << F("adduser <user>                - Add <user> to the remembered user list") << endl
-        << F("removeuser <user>             - Remove <user> from the remembered user list") << endl
+        << F("login <user>, <password>          - Login <user> with <password>") << endl
+        << F("logout <token>                    - Logout user <token>") << endl
+        << F("user <token>                      - Switch to user <token>") << endl
+        << F("users                             - List remembered users") << endl
+        << F("adduser <user>                    - Add <user> to the remembered user list") << endl
+        << F("removeuser <user>                 - Remove <user> from the remembered user list") << endl
         << endl
         << endl
         << F("Sites") << endl
         << F("-----") << endl
-        << F("sites                         - List remembered sites for current user") << endl
-        << F("addsite <site>                - Add remembered site <site>") << endl
-        << F("removesite <site>             - Remove remembered site <site> for current user") << endl
-        << F("setcounter <site>, <counter>  - Set <site> counter to <counter> (Defaults to 1)") << endl
-        << F("settype <site>, <type>        - Set <site> password type to <type> (Defaults to Long)") << endl
-        << F("hasusername <site>            - Add a generated username to <site> (Defaults to false)") << endl
-        << F("hasrecovery <site>            - Add a generated recovery phrase to <site>" ) << endl
-        << F("addanswer <site>, <word>      - Add a generated recovery phrase based on <word> to <site>") << endl
-        << F("requirelogin <site>           - Require the user to login again to generate information for <site>") << endl
-        << F("removeall                     - Remove all sites for current user") << endl
+        << F("sites                             - List remembered sites for current user") << endl
+        << F("addsite <site>                    - Add remembered site <site>") << endl
+        << F("removesite <site>                 - Remove remembered site <site> for current user") << endl
+        << F("setcounter <site>, <counter>      - Set <site> counter to <counter> (Defaults to 1)") << endl
+        << F("settype <site>, <type>            - Set <site> password type to <type> (Defaults to Long)") << endl
+        << F("sethasusername <site>, <state>    - Set <site> generated username to <state> (Defaults to false)") << endl
+        << F("sethasrecovery <site>, <state>    - Set <site> generated recovery phrase to <state> (Defaults to false)" ) << endl
+        << F("addanswer <site>, <word>          - Add a generated recovery phrase based on <word> to <site>") << endl
+        << F("removeanswer <site>, <word>       - Remove generated recovery phrase for <word> from <site>") << endl
+        //<< F("requirelogin <site>               - Require the user to login again to generate information for <site>") << endl
+        << F("removeall                         - Remove all sites for current user") << endl
         << endl
         << endl
         << F("Passwords etc") << endl
         << F("-------------") << endl
-        << F("site <site>                   - Generate passwords, usernames, and recovery answers for the site <site>")
+        << F("site <site>                       - Generate passwords, usernames, and recovery answers for the site <site>") << endl
         << endl
         << endl
         << F("Maintenance") << endl
         << F("-----------") << endl
-        << F("exit                          - Exit the EMPW program (only available on cli version)") << endl
-        << F("reset                         - Reset EMPW program (users need to log in again)") << endl
-        << F("erase                         - Erase all remembered sites for all users") << endl
-        << F("help                          - Show this help screen") << endl
+        << F("exit                              - Exit the EMPW program (only available on cli version)") << endl
+        << F("reset                             - Reset EMPW program (users need to log in again)") << endl
+        << F("erase                             - Erase all remembered sites for all users") << endl
+        << F("help                              - Show this help screen") << endl
         << endl
         << endl
         << F("Multiple commands can be issued in one go, separated by ';', e.g.") << endl
@@ -330,29 +340,16 @@ void command::handle_login(char * pdata)
     m_current_user = NULL;
 
     // Expects <user>,<password>
-    SKIP_WHITESPACE(pdata);
-    char * saveptr;
-    const char * uname = strtok_r(pdata, ARGUMENT_SEPARATOR, &saveptr);
-    if ( uname == NULL )
-    {
-        IO << F("Expected user name") << endl;
-        return;
-    }
-    const char * pwd = strtok_r(NULL, ARGUMENT_SEPARATOR, &saveptr);
-    if ( pwd == NULL )
-    {
-        IO << F("Expected password") << endl;
-        return;
-    }
-    SKIP_WHITESPACE(pwd);
+    FIRST_ARG(username);
+    NEXT_ARG(password);
 
-    uint8_t user_index = find_user(uname, false);
+    uint8_t user_index = find_user(username, false);
     if ( user_index == USER_NOT_FOUND )
     {
         // Dynamic/temp user already present, so this gets logged out
         if ( m_users[MAX_PERSISTENT_USERS] != 0 )
             delete m_users[MAX_PERSISTENT_USERS];
-        m_users[MAX_PERSISTENT_USERS] = new userinfo(uname);
+        m_users[MAX_PERSISTENT_USERS] = new userinfo(username);
         user_index = MAX_PERSISTENT_USERS;
     }
 
@@ -363,7 +360,7 @@ void command::handle_login(char * pdata)
     #else
     std::clock_t start = 0;
     #endif
-    m_current_user->get_mpw().login(uname, pwd,
+    m_current_user->get_mpw().login(username, password,
         [&] (uint8_t percent) {
             #ifdef ARDUINO
             if ( ( millis() - start ) > 1000 )
@@ -379,14 +376,14 @@ void command::handle_login(char * pdata)
                 IO << F("Calculating ... ") << percent << F("%") << endl;
             }
         });
-    IO  << F("User [") << uname << F("] logged in") << endl
+    IO  << F("User [") << username << F("] logged in") << endl
         << F("TOKEN:") << m_current_user->get_mpw().get_login_token() << endl;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void command::handle_logout(char * pdata)
 {
-    SKIP_WHITESPACE(pdata);
-    uint32_t token = atoi(pdata);
+    FIRST_ARG(usertoken);
+    uint32_t token = atoi(usertoken);
     uint8_t user_index = find_user(token);
     if ( user_index == USER_NOT_FOUND )
     {
@@ -401,8 +398,8 @@ void command::handle_logout(char * pdata)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void command::handle_switch_user(char * pdata)
 {
-    SKIP_WHITESPACE(pdata);
-    uint32_t token = atoi(pdata);
+    FIRST_ARG(usertoken);
+    uint32_t token = atoi(usertoken);
     uint8_t user_index = find_user(token);
     if ( user_index == USER_NOT_FOUND )
     {
@@ -435,11 +432,11 @@ void command::handle_list_users(void)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void command::handle_add_user(char * pdata)
 {
-    SKIP_WHITESPACE(pdata);
-    uint8_t existing_user = find_user(pdata, false);
+    FIRST_ARG(username);
+    uint8_t existing_user = find_user(username, false);
     if ( existing_user != USER_NOT_FOUND )
     {
-        IO << "Cannot add user `" << pdata << "`. Already present in the system" << endl;
+        IO << "Cannot add user `" << username << "`. Already present in the system" << endl;
         return;
     }
 
@@ -448,22 +445,22 @@ void command::handle_add_user(char * pdata)
     {
         if ( m_users[i] == 0 )
         {
-            m_users[i] = new userinfo(pdata);
+            m_users[i] = new userinfo(username);
             save();
             return;
         }
     }
 
-    IO << "Insufficient space to add user `" << pdata << "`. Please remove an existing user." << endl;
+    IO << "Insufficient space to add user `" << username << "`. Please remove an existing user." << endl;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void command::handle_remove_user(char * pdata)
 {
-    SKIP_WHITESPACE(pdata);
-    uint8_t existing_user = find_user(pdata, false);
+    FIRST_ARG(username);
+    uint8_t existing_user = find_user(username, false);
     if ( existing_user == USER_NOT_FOUND )
     {
-        IO << "Cannot find user `" << pdata << "` to remove." << endl;
+        IO << "Cannot find user `" << username << "` to remove." << endl;
         return;
     }
 
@@ -523,7 +520,7 @@ bool command::check_login(void) const
     return true;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-siteinfo* command::find_site(const char * sitename)
+siteinfo* command::find_site(const char * sitename, bool show_complaint_on_failure)
 {
     if ( !check_login())
         return NULL;
@@ -531,6 +528,10 @@ siteinfo* command::find_site(const char * sitename)
     for(std::vector<siteinfo>::iterator i=m_current_user->get_sites().begin(); i!=m_current_user->get_sites().end(); i++)
         if ( i->is_site(sitename) )
             return &*i;
+    if ( show_complaint_on_failure )
+    {
+        IO << "Cannot find site `" << sitename << "`. Command not executed" << endl;
+    }
     return NULL;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -539,14 +540,11 @@ void command::handle_add_site(char * pdata)
     if ( !check_login())
         return;
 
-
-    // Expects <site>, <counter>, <style>
+    // Expects <site>
     FIRST_ARG(sitename);
-    NEXT_ARG(counter);
-    NEXT_ARG(style);
 
-    IO << "add site [" << sitename << "] counter [" << counter << "] style [" << style << "]" << endl;
-    m_current_user->get_sites().push_back(siteinfo(sitename, atoi(counter), get_style(style)));
+    IO << "add site [" << sitename << "]" << endl;
+    m_current_user->get_sites().push_back(siteinfo(sitename));
     save();
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -575,31 +573,122 @@ void command::handle_setcounter(char * pdata)
         return;
     FIRST_ARG(sitename);
     NEXT_ARG(counter);
-    siteinfo * s = find_site(sitename);
+    siteinfo * s = find_site(sitename, true);
     if ( s == NULL )
         return;
     s->set_counter(atoi(counter));
     save();
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+void command::handle_settype(char * pdata)
+{
+    if ( !check_login())
+        return;
+    FIRST_ARG(sitename);
+    NEXT_ARG(style);
+    siteinfo * s = find_site(sitename, true);
+    if ( s == NULL )
+        return;
+    s->set_style(get_style(style));
+    save();
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void command::handle_sethasusername(char * pdata)
+{
+    if ( !check_login())
+        return;
+    FIRST_ARG(sitename);
+    NEXT_ARG(state);
+    siteinfo * s = find_site(sitename, true);
+    if ( s == NULL )
+        return;
+    bool set = strcmpi(state, "true") == 0;
+    s->set_options( set ? SET_FLAG( s->get_options(), SITEINFO_HAS_USERNAME ) : RESET_FLAG( s->get_options(), SITEINFO_HAS_USERNAME ));
+    save();
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void command::handle_sethasrecovery(char * pdata)
+{
+    if ( !check_login())
+        return;
+    FIRST_ARG(sitename);
+    NEXT_ARG(state);
+    siteinfo * s = find_site(sitename, true);
+    if ( s == NULL )
+        return;
+    bool set = strcmpi(state, "true") == 0;
+    s->set_options( set ? SET_FLAG( s->get_options(), SITEINFO_HAS_RECOVERY ) : RESET_FLAG( s->get_options(), SITEINFO_HAS_RECOVERY ));
+    save();
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void command::handle_addanswer(char * pdata)
+{
+    if ( !check_login())
+        return;
+    FIRST_ARG(sitename);
+    NEXT_ARG(answer);
+    siteinfo * s = find_site(sitename, true);
+    if ( s == NULL )
+        return;
+    s->set_options( SET_FLAG( s->get_options(), SITEINFO_HAS_ANSWERS ));
+    s->get_answers().push_back(answer);
+    save();
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void command::handle_removeanswer(char * pdata)
+{
+    if ( !check_login())
+        return;
+    FIRST_ARG(sitename);
+    NEXT_ARG(answer);
+    siteinfo * s = find_site(sitename, true);
+    if ( s == NULL )
+        return;
+    for(std::vector<str_ptr>::iterator i=s->get_answers().begin(); i!=s->get_answers().end(); i++)
+    {
+        if ( *i == answer )
+        {
+            s->get_answers().erase(i);
+            if ( s->get_answers().size() == 0 )
+            {
+                s->set_options( RESET_FLAG( s->get_options(), SITEINFO_HAS_ANSWERS ));
+            }
+            save();
+            return;
+        }
+    }
+
+    IO << "Couldn't find answer word `" << answer << "` for site `" << sitename << "` to remove" << endl;
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
 void command::handle_site(char * pdata)
 {
     if ( !check_login())
         return;
-    SKIP_WHITESPACE(pdata);
-
+    FIRST_ARG(sitename);
     // Create default siteinfo
-    siteinfo def(pdata,1,Long);
-    // Locate save site if there is one
-    auto psite = find_site(pdata);
+    siteinfo def(sitename);
+    // Locate saved site if there is one
+    auto psite = find_site(sitename, false);
     if ( psite == NULL )
         psite = &def;
 
-    if ( psite->get_options() & SITEINFO_HAS_USERNAME )
+    if ( IS_FLAG_SET( psite->get_options(), SITEINFO_HAS_USERNAME ))
+    {
         IO << "user: " << m_current_user->get_mpw().generate( psite->get_sitename(), MPW_USERNAME_COUNTER, MPW_USERNAME_TYPE, NULL, MPW_Scope_Identification ) << endl;
+    }
     IO << "password: " << m_current_user->get_mpw().generate( psite->get_sitename(), psite->get_counter(), psite->get_style(), NULL, MPW_Scope_Authentication ) << endl;
-    if ( psite->get_options() & SITEINFO_HAS_RECOVERY )
+    if ( IS_FLAG_SET( psite->get_options(), SITEINFO_HAS_RECOVERY ))
+    {
         IO << "recovery: " << m_current_user->get_mpw().generate( psite->get_sitename(), MPW_RECOVERY_COUNTER, MPW_RECOVERY_TYPE, NULL, MPW_Scope_Recovery ) << endl;
+    }
+    if ( IS_FLAG_SET( psite->get_options(), SITEINFO_HAS_ANSWERS ))
+    {
+        for( std::vector<str_ptr>::const_iterator i = psite->get_answers().begin(); i != psite->get_answers().end(); i++ )
+        {
+            IO << "recovery[" << *i << "]: " << m_current_user->get_mpw().generate( psite->get_sitename(), MPW_RECOVERY_COUNTER, MPW_RECOVERY_TYPE, *i, MPW_Scope_Recovery ) << endl;
+        }
+    }
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void command::handle_reset(void)

@@ -94,12 +94,14 @@ void    persistence::write8(uint8_t v)
         IO << "Cannot write any more to the persistent storage, there is no space left" << endl;
         empw_exit(EXITCODE_NO_MEMORY);
     }
-    
+
     if ( EEPROM[m_index] != v )
     {
-        EEPROM[m_index++] = v;
+        EEPROM[m_index] = v;
         m_dirty = true;
     }
+
+    m_index++;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 str_ptr     persistence::readstr(void)
