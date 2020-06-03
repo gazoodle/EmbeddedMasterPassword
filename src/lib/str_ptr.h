@@ -1,3 +1,31 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//  str_ptr.h - Header file for string pointer class
+//
+//      A small reference counted char * manager. This works on the principle that
+//      most strings that need to be shared in a program very rarely have large numbers
+//      of references. Certainly for most cases this is less than 255 uses, so we simply 
+//      overallocate strings with an extra byte at the start of the string and use that
+//      as a reference counter. This means that the ownership of memory cleanup is the
+//      responsibility of the str_ptr holder that decrements the usage count to zero.
+//
+//  Copyright (C) 2020, Gazoodle (https://github.com/gazoodle)
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+//
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 #ifndef _inc_str_ptr_h
 #define _inc_str_ptr_h
 
@@ -5,16 +33,6 @@
 #include <stdlib.h>
 #include "io.h"
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//  str_ptr -   A small reference counted char * manager. This works on the principle that
-//              most strings that need to be shared in a program very rarely have large numbers
-//              of references. Certainly for most cases this is less than 255, so we simply 
-//              overallocate strings with an extra byte at the start of the string and use that
-//              as a reference counter. This means that the ownership of memory cleanup is the
-//              responsibility of the str_ptr holder that decrements the usage count to zero.
-//
-///////////////////////////////////////////////////////////////////////////////////////////////////
 class str_ptr
 {
 public:

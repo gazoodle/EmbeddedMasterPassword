@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //
-//  pbkdf2.h - Header file for PBKDF2 implementation
+//  scrypt.h - Header file for scrypt implementation
 //
 //  Copyright (C) 2020, Gazoodle (https://github.com/gazoodle)
 //

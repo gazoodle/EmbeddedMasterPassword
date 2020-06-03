@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //
-//  pbkdf2.h - Header file for PBKDF2 implementation
+//  mpw.h - Header file for Master Password implementation
 //
 //  Implementation Copyright (C) 2020, Gazoodle (https://github.com/gazoodle)
 //  Algorithm Copyright (C) 2011-2018, Maarten Billemont, Lyndir (https://masterpassword.app/)

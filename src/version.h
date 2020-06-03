@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //
-//  version.h - Header file for Embedded Master Password version control
+//  version.h - Header file for Embedded Master Password versions
 //
 //  Copyright (C) 2020, Gazoodle (https://github.com/gazoodle)
 //

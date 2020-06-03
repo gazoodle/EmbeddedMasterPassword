@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //
-//  platform.h - Header file for Embedded Master Password version control
+//  platform.h - Header file for Embedded Master Password platform helpers
 //
 //  Copyright (C) 2020, Gazoodle (https://github.com/gazoodle)
 //

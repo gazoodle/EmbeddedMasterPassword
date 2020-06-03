@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //
-//  romix.h - Header file for ROMix implementation
+//  scrypt-mixer.h - Header file for scrypt mix implementation
 //
 //  Copyright (C) 2020, Gazoodle (https://github.com/gazoodle)
 //
@@ -19,8 +19,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef _inc_romix_h
-#define _inc_romix_h
+#ifndef _inc_scrypt_mixer_h
+#define _inc_scrypt_mixer_h
 
 #include <stdint.h>
 #include <functional>
