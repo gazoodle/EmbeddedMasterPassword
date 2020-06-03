@@ -38,10 +38,12 @@ public:
     siteinfo(str_ptr sitename, uint8_t counter, MPM_Password_Type style) : m_sitename(sitename), m_counter(counter), m_style(style), m_options(0) {}
     siteinfo(const siteinfo& other) : m_sitename(other.m_sitename), m_counter(other.m_counter), m_style(other.m_style), m_options(other.m_options), m_answer_words(other.m_answer_words) {}
 
-    const char *            get_sitename(void) const    { return m_sitename; }
-    uint8_t                 get_counter(void) const     { return m_counter; }
-    MPM_Password_Type       get_style(void) const       { return m_style; }
-    uint8_t                 get_options(void) const     { return m_options; }
+    bool                    is_site(const char * s) const   { return m_sitename == s; }
+    const char *            get_sitename(void) const        { return m_sitename; }
+    uint8_t                 get_counter(void) const         { return m_counter; }
+    void                    set_counter(uint8_t c)          { m_counter = c; }
+    MPM_Password_Type       get_style(void) const           { return m_style; }
+    uint8_t                 get_options(void) const         { return m_options; }
 
     static siteinfo         load(persistence& p);
     void                    save(persistence& p) const;

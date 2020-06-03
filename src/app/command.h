@@ -67,15 +67,18 @@ private:
     void handle_add_site(char * pdata);
     void handle_list_sites(void);
     void handle_removeall(void);
+    void handle_setcounter(char * pdata);
 
     // Generate commands
     void handle_site(char * pdata);
 
 private:
-    uint8_t find_user(const char * uname, bool include_dynamic) const;
-    uint8_t find_user(uint32_t token) const;
-    void    load(void);
-    void    save(void);
+    bool        check_login(void) const;
+    uint8_t     find_user(const char * uname, bool include_dynamic) const;
+    uint8_t     find_user(uint32_t token) const;
+    siteinfo*   find_site(const char * sitename);
+    void        load(void);
+    void        save(void);
 
 private:
     userinfo*                       m_users[MAX_PERSISTENT_USERS+1];

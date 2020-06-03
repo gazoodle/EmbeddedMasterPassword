@@ -28,6 +28,19 @@
 #define COMMAND_SEPARATOR       ";"
 #define ARGUMENT_SEPARATOR      ","
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+#define _S(x)                   #x
+#define CHECK_ARG(n)            if ( n == NULL ) { \
+                                    IO << F("Expected argument <") << F(_S(n)) << ">" << endl; \
+                                    return; \
+                                } \
+                                SKIP_WHITESPACE(n);
+#define FIRST_ARG(n)            SKIP_WHITESPACE(pdata); \
+                                char * saveptr; \
+                                const char * n = strtok_r( pdata, ARGUMENT_SEPARATOR, &saveptr ); \
+                                CHECK_ARG(n)
+#define NEXT_ARG(n)             const char * n = strtok_r( NULL, ARGUMENT_SEPARATOR, &saveptr ); \
+                                CHECK_ARG(n)
+///////////////////////////////////////////////////////////////////////////////////////////////////
 command::command(void)
 {
     memset(m_users, 0, sizeof(m_users));
@@ -193,6 +206,9 @@ bool command::dispatch(char * pcommand)
         handle_list_sites();
     else if ( strncmp( pcommand, "removeall", 10 ) == 0 )
         handle_removeall();
+    else if ( strncmp( pcommand, "setcounter ", 11) == 0 )
+        handle_setcounter(pcommand+11);
+
 
     //
     //  Generation
@@ -497,50 +513,47 @@ MPM_Password_Type command::get_style(const char * style)
     return MPM_Password_Type::Long;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void command::handle_add_site(char * pdata)
+bool command::check_login(void) const
 {
     if ( m_current_user == 0 )
     {
         IO << F("No current user, please login") << endl;
-        return;
+        return false;
     }
+    return true;
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+siteinfo* command::find_site(const char * sitename)
+{
+    if ( !check_login())
+        return NULL;
+    SKIP_WHITESPACE(sitename);
+    for(std::vector<siteinfo>::iterator i=m_current_user->get_sites().begin(); i!=m_current_user->get_sites().end(); i++)
+        if ( i->is_site(sitename) )
+            return &*i;
+    return NULL;
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void command::handle_add_site(char * pdata)
+{
+    if ( !check_login())
+        return;
+
 
     // Expects <site>, <counter>, <style>
-    SKIP_WHITESPACE(pdata);
-    char * saveptr;
-    const char * site = strtok_r( pdata, ARGUMENT_SEPARATOR, &saveptr );
-    if ( site == NULL )
-    {
-        IO << F("Expected site name") << endl;
-        return;
-    }
-    const char * counter = strtok_r( NULL, ARGUMENT_SEPARATOR, &saveptr );
-    if ( counter == NULL )
-    {
-        IO << F("Expected counter") << endl;
-        return;
-    }
-    SKIP_WHITESPACE(counter);
-    const char * style = strtok_r( NULL, ARGUMENT_SEPARATOR, &saveptr );
-    if ( style == NULL )
-    {
-        IO << F("Expected style") << endl;
-        return;
-    }
-    SKIP_WHITESPACE(style);
+    FIRST_ARG(sitename);
+    NEXT_ARG(counter);
+    NEXT_ARG(style);
 
-    IO << "add site [" << site << "] counter [" << counter << "] style [" << style << "]" << endl;
-    m_current_user->get_sites().push_back(siteinfo(site, atoi(counter), get_style(style)));
+    IO << "add site [" << sitename << "] counter [" << counter << "] style [" << style << "]" << endl;
+    m_current_user->get_sites().push_back(siteinfo(sitename, atoi(counter), get_style(style)));
     save();
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void command::handle_list_sites(void)
 {
-    if ( m_current_user == 0 )
-    {
-        IO << F("No current user, please login") << endl;
+    if ( !check_login())
         return;
-    }
 
     for(std::vector<siteinfo>::const_iterator i=m_current_user->get_sites().begin(); i!=m_current_user->get_sites().end(); i++)
     {
@@ -550,33 +563,43 @@ void command::handle_list_sites(void)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void command::handle_removeall(void)
 {
-    if ( m_current_user == 0 )
-    {
-        IO << F("No current user, please login") << endl;
+    if ( !check_login())
         return;
-    }
-
     m_current_user->get_sites().clear();
+    save();
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void command::handle_setcounter(char * pdata)
+{
+    if ( !check_login())
+        return;
+    FIRST_ARG(sitename);
+    NEXT_ARG(counter);
+    siteinfo * s = find_site(sitename);
+    if ( s == NULL )
+        return;
+    s->set_counter(atoi(counter));
     save();
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void command::handle_site(char * pdata)
 {
-    if ( m_current_user == 0 )
-    {
-        IO << F("No current user, please login") << endl;
+    if ( !check_login())
         return;
-    }
-
-    // Expects <site>
     SKIP_WHITESPACE(pdata);
 
-    // Locate site in user info if possible
+    // Create default siteinfo
+    siteinfo def(pdata,1,Long);
+    // Locate save site if there is one
+    auto psite = find_site(pdata);
+    if ( psite == NULL )
+        psite = &def;
 
-
-    IO << "user: " << m_current_user->get_mpw().generate( pdata, MPW_USERNAME_COUNTER, MPW_USERNAME_TYPE, NULL, MPW_Scope_Identification ) << endl;
-    IO << "password: " << m_current_user->get_mpw().generate( pdata, 1, Long, NULL, MPW_Scope_Authentication ) << endl;
-    IO << "recovery: " << m_current_user->get_mpw().generate( pdata, MPW_RECOVERY_COUNTER, MPW_RECOVERY_TYPE, NULL, MPW_Scope_Recovery ) << endl;
+    if ( psite->get_options() & SITEINFO_HAS_USERNAME )
+        IO << "user: " << m_current_user->get_mpw().generate( psite->get_sitename(), MPW_USERNAME_COUNTER, MPW_USERNAME_TYPE, NULL, MPW_Scope_Identification ) << endl;
+    IO << "password: " << m_current_user->get_mpw().generate( psite->get_sitename(), psite->get_counter(), psite->get_style(), NULL, MPW_Scope_Authentication ) << endl;
+    if ( psite->get_options() & SITEINFO_HAS_RECOVERY )
+        IO << "recovery: " << m_current_user->get_mpw().generate( psite->get_sitename(), MPW_RECOVERY_COUNTER, MPW_RECOVERY_TYPE, NULL, MPW_Scope_Recovery ) << endl;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void command::handle_reset(void)
