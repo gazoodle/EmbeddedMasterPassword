@@ -28,9 +28,9 @@
 #define COMMAND_SEPARATOR       ";"
 #define ARGUMENT_SEPARATOR      ","
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-#define _S(x)                   #x
+#define _ARG_STR(x)             #x
 #define CHECK_ARG(n)            if ( n == NULL ) { \
-                                    IO << F("Expected argument <") << F(_S(n)) << ">" << endl; \
+                                    IO << F("Expected argument <") << F(_ARG_STR(n)) << ">" << endl; \
                                     return; \
                                 } \
                                 SKIP_WHITESPACE(n);
@@ -489,9 +489,9 @@ MPM_Password_Type command::get_style(const char * style)
 {
     SKIP_WHITESPACE(style);
 
-    #define _S(x) #x
-    #define S(x) _S(x)
-    #define CHECK_STYLE(s, e)   { if ( strcmpi( style, S(e)) == 0 ) return e; }
+    #define _STYLE_STR(x) #x
+    #define STYLE_STR(x) _STYLE_STR(x)
+    #define CHECK_STYLE(s, e)   { if ( strcmpi( style, STYLE_STR(e)) == 0 ) return e; }
 
     CHECK_STYLE(s, Basic);
     CHECK_STYLE(s, Long);

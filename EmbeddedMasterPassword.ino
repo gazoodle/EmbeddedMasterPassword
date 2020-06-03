@@ -35,3 +35,7 @@ void loop(void)
     command_processor.loop();
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+extern "C"{
+  int __exidx_start(){ return -1;}
+  int __exidx_end(){ return -1; }
+}
