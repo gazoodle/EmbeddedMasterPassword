@@ -27,8 +27,10 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "mpw.h"
-
 #include <stdio.h>
+#ifndef ARDUINO
+#include <ctime>
+#endif
 
 #ifdef ENABLE_MPW_EXTENSIONS        
 const char * MPW_Template_Vast[] = {
@@ -132,6 +134,8 @@ const char * MPW_Template_Class_Characters(char c)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 MPW& MPW::login(const char *name, const char *password, progress_func progress)
 {
+    // Logout first
+    logout();
     // Gather some reused data
     uint32_t name_len = strlen(name);
     uint32_t seed_buffer_len = sizeof(MPW_Namespace) - 1 + sizeof(uint32_t) + name_len;
@@ -150,16 +154,17 @@ MPW& MPW::login(const char *name, const char *password, progress_func progress)
     m_master_key = m_master_key_holder.hash(reinterpret_cast<const uint8_t *>(password), strlen(password), seed_buffer, seed_buffer_len, progress);
     // Clean up please
     free(seed_buffer);
+    generate_login_token();
     // Allow fluent syntax
     return *this;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void MPW::logout(void)
 {
-    if ( m_site_password != 0 )
+    if ( m_site_password != NULL )
     {
         free(m_site_password);
-        m_site_password = 0;
+        m_site_password = NULL;
     }
 
     m_master_key_holder.Reset();
@@ -191,6 +196,10 @@ const char * MPW::get_password_template( uint8_t c, MPM_Password_Type type )
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 const char * MPW::generate( const char *site_name, uint32_t site_counter, MPM_Password_Type type, const char * context, const char * scope )
 {
+    // Free existing password
+    if ( m_site_password != NULL )
+        free(m_site_password);
+
     uint32_t sitename_len = strlen(site_name);
     uint32_t scope_len = strlen(scope);
     uint32_t context_len = 0;
@@ -223,31 +232,56 @@ const char * MPW::generate( const char *site_name, uint32_t site_counter, MPM_Pa
     HMAC<SHA256> site_key_generator(m_master_key, MASTER_KEY_LEN, seed_buffer, seed_buffer_len);
     auto site_key = site_key_generator.digest();
 
-    const char * pwd_template = get_password_template(site_key[0], type);
+    if ( type == MPM_Password_Type::Raw )
+    {
+        m_site_password = (char *)malloc(site_key_generator.HASH_SIZE_BYTES);
+        memcpy( m_site_password, site_key, site_key_generator.HASH_SIZE_BYTES);
+    }
+    else
+    {
+        const char * pwd_template = get_password_template(site_key[0], type);
 
-    // Alloc password buffer
-    uint8_t pwd_len = strlen(pwd_template);
-    if ( m_site_password != 0 )
-        free(m_site_password);
-    m_site_password = (char *)malloc(pwd_len+1);
-    if ( m_site_password == 0 )
-    {
-        IO << F("Failed to allocate password buffer") << endl;
-        empw_exit(EXITCODE_NO_MEMORY);
+        // Alloc password buffer
+        uint8_t pwd_len = strlen(pwd_template);
+        m_site_password = (char *)malloc(pwd_len+1);
+        if ( m_site_password == NULL )
+        {
+            IO << F("Failed to allocate password buffer") << endl;
+            empw_exit(EXITCODE_NO_MEMORY);
+        }
+        memset(m_site_password,0,pwd_len+1);
+        // Fill it up!
+        for(uint8_t i=0;i<pwd_len;i++)
+        {
+            const char * password_chars = MPW_Template_Class_Characters(pwd_template[i]);
+            m_site_password[i] = password_chars[site_key[i+1] % strlen( password_chars )];
+        }
     }
-    memset(m_site_password,0,pwd_len+1);
-    // Fill it up!
-    for(uint8_t i=0;i<pwd_len;i++)
-    {
-        const char * password_chars = MPW_Template_Class_Characters(pwd_template[i]);
-        m_site_password[i] = password_chars[site_key[i+1] % strlen( password_chars )];
-    }
+    // Clean up please
+    free(seed_buffer);
 
     return m_site_password;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+void MPW::generate_login_token(void)
+{
+    #ifdef ARDUINO
+    uint32_t nonce = millis();
+    #else
+    uint32_t nonce = std::clock();
+    #endif
+    const char* token = generate("https://github.com/gazoodle/EmbeddedMasterPassword", nonce, Raw, NULL, MPW_Scope_Token );
+    m_login_token = *reinterpret_cast<const uint32_t*>(token);
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
 uint32_t MPW::get_login_token(void) const
 {
-    return (uint32_t)((size_t)this);
+    if ( !is_logged_in() )
+    {
+        IO << "Cannot get login token. No user is logged in" << endl;
+        empw_exit(EXITCODE_LOGIC_FAULT);
+    }
+
+    return m_login_token;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////

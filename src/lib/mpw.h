@@ -50,6 +50,8 @@ typedef enum {
     BigPhrase,
 #endif
 
+    Raw = 0xffff
+
 } MPM_Password_Type;
 
 #define MPW_USERNAME_COUNTER    (1)
@@ -62,20 +64,21 @@ class MPW
 private:
     MPW(const MPW& other){}
 public:
-    MPW(void) : m_master_key(0), m_site_password(0) {}
+    MPW(void) : m_master_key(NULL), m_login_token(0), m_site_password(NULL) {}
     ~MPW(void) { logout(); }
 
     // User managment
-    MPW&        login(const char *name, const char *password, progress_func progress);
-    void        logout(void);
-    bool        is_logged_in(void) const { return m_master_key != 0; }
-    uint32_t    get_login_token(void) const;
+    MPW&            login(const char *name, const char *password, progress_func progress);
+    void            logout(void);
+    bool            is_logged_in(void) const { return m_master_key != 0; }
+    uint32_t        get_login_token(void) const;
 
     // Generate response
-    const char * generate( const char *site_name, uint32_t site_counter, MPM_Password_Type type, const char * context, const char * scope );
+    const char *    generate( const char *site_name, uint32_t site_counter, MPM_Password_Type type, const char * context, const char * scope );
 
 private:
-    const char * get_password_template( uint8_t c, MPM_Password_Type type );
+    const char *    get_password_template( uint8_t c, MPM_Password_Type type );
+    void            generate_login_token(void);
 
 private:
     void push_int( uint8_t *buf, uint32_t val )
@@ -89,6 +92,7 @@ private:
 private:
     scrypt<SCRYPT_N, SCRYPT_R, SCRYPT_P, MASTER_KEY_LEN>        m_master_key_holder;
     const uint8_t*                                              m_master_key;
+    uint32_t                                                    m_login_token;
     char *                                                      m_site_password;
 };
 
@@ -97,5 +101,6 @@ private:
 #define MPW_Scope_Authentication    MPW_Namespace
 #define MPW_Scope_Identification    MPW_Scope_Authentication ".login"
 #define MPW_Scope_Recovery          MPW_Scope_Authentication ".answer"
+#define MPW_Scope_Token             MPW_Scope_Authentication ".token"
 
 #endif
