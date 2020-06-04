@@ -36,7 +36,7 @@
 
 #define EMPW_MAJOR_VERSION      0
 #define EMPW_MINOR_VERSION      1
-#define EMPW_PATCH              5
+#define EMPW_PATCH              6
 
 
 #define _VERSION_STRINGIZE(x)    #x
