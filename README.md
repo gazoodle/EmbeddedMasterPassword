@@ -172,6 +172,9 @@ The `setcounter` command sets the site counter for 'masterpasswordapp.com' to 2.
                     cd tests
                     make
                     ./tests
+/src/app    -   EMPW client application code (command processor etc)
+/src/lib    -   EMPW algorithm and supporting classes
+                    SHA256, HMAC, PBKDF2, scrypt and MPW
 ```
 
 # Coming next
