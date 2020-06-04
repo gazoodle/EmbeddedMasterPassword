@@ -167,20 +167,6 @@ void command::handle_command(char * pcommand)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 bool command::dispatch(char * pcommand)
 {
- #ifndef ARDUINO
-    if ( strncmp( pcommand, "exit", 5) == 0 )
-    {
-        m_is_running = false;
-        return false;
-    } 
-    else if ( strncmp( pcommand, "save", 5 ) == 0 )
-    {
-        save();
-    }
-    else
-    #endif
-
-
     //
     //  Users
     //  =====
@@ -233,6 +219,13 @@ bool command::dispatch(char * pcommand)
         handle_reset();
     else if ( strncmp( pcommand, "erase", 6) == 0 )         // Includes \0 to avoid matching substrings
         handle_erase();
+#ifndef ARDUINO
+    else if ( strncmp( pcommand, "exit", 5) == 0 )
+    {
+        m_is_running = false;
+        return false;
+    } 
+#endif
     else
     {
         IO << "Unhandled command [" << pcommand << "]. Please see help below for more information " << endl;
@@ -252,15 +245,15 @@ void command::handle_help(void)
         << F("logout <token>                    - Logout user <token>") << endl
         << F("user <token>                      - Switch to user <token>") << endl
         << F("users                             - List remembered users") << endl
-        << F("adduser <user>                    - Add <user> to the remembered user list") << endl
-        << F("removeuser <user>                 - Remove <user> from the remembered user list") << endl
+        << F("adduser <user>                    - Add <user> to the persistent user list") << endl
+        << F("removeuser <user>                 - Remove <user> from the persistent user list") << endl
         << endl
         << endl
         << F("Sites") << endl
         << F("-----") << endl
-        << F("sites                             - List remembered sites for current user") << endl
-        << F("addsite <site>                    - Add remembered site <site>") << endl
-        << F("removesite <site>                 - Remove remembered site <site> for current user") << endl
+        << F("sites                             - List persistent sites for current user") << endl
+        << F("addsite <site>                    - Add persistent site <site>") << endl
+        << F("removesite <site>                 - Remove persistent site <site> for current user") << endl
         << F("setcounter <site>, <counter>      - Set <site> counter to <counter> (Defaults to 1)") << endl
         << F("settype <site>, <type>            - Set <site> password type to <type> (Defaults to Long)") << endl
         << F("sethasusername <site>, <state>    - Set <site> generated username to <state> (Defaults to false)") << endl
@@ -276,20 +269,24 @@ void command::handle_help(void)
         << F("site <site>                       - Generate passwords, usernames, and recovery answers for the site <site>") << endl
         << endl
         << endl
-        << F("Maintenance") << endl
-        << F("-----------") << endl
-        << F("exit                              - Exit the EMPW program (only available on cli version)") << endl
+        << F("Miscellaneous") << endl
+        << F("-------------") << endl
+        << F("help                              - Show this help screen") << endl
         << F("reset                             - Reset EMPW program (users need to log in again)") << endl
         << F("erase                             - Erase all remembered sites for all users") << endl
-        << F("help                              - Show this help screen") << endl
+#ifndef ARDUINO
+        << F("exit                              - Exit the EMPW program") << endl
+#endif        
         << endl
         << endl
         << F("Multiple commands can be issued in one go, separated by ';', e.g.") << endl
         << endl
-        << F("  user 12345; example.com") << endl
+        << F("  adduser user; login user,password; addsite example.com; site example.com") << endl
         << endl
-        << F("  - Switch to user with token 12345") << endl
-        << F("  - Generate security info for example.com") << endl
+        << F("  - Add user 'user' to list of persistent users") << endl
+        << F("  - Login user 'user' with password 'password'") << endl
+        << F("  - Add site 'example.com' to user 'users' list of persistent sites") << endl
+        << F("  - Generate password for site 'example.com' for user 'user'") << endl
 
         << endl;
 }

@@ -349,18 +349,6 @@ void test_MPW(void)
     MPW_Test_Data   td = {0};
     MPW             mpw;
 
-    {
-        mpw.login("user", "password", NULL);
-        const char * r = mpw.generate("example.com", 1, MPM_Password_Type::Phrase, NULL, MPW_Scope_Recovery );
-        IO << "Recovery 1`" << r << "`" << endl;
-        const char * r2 = mpw.generate("example.com", 1, MPM_Password_Type::Phrase, "maiden", MPW_Scope_Recovery );
-        IO << "Recovery 2`" << r2 << "`" << endl;
-        const char * r3 = mpw.generate("example.com", 1, MPM_Password_Type::Phrase, "pet", MPW_Scope_Recovery );
-        IO << "Recovery 2`" << r3 << "`" << endl;
-        const char * u = mpw.generate("example.com", 1, MPM_Password_Type::Name, NULL, MPW_Scope_Identification );
-        IO << "User `" << u << "`" << endl;
-    }
-
     // Run over the test matrix, gather the test data into a local copy...
     for(unsigned int i=0; i<countof(test_data); i++)
     {
