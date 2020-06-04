@@ -2,16 +2,77 @@
 [Maarten Billemont's](http://www.lhunath.com/) original [Master Password](https://masterpassword.app/) algorithm ported to the embedded
 world providing a physical manifestation using [Paul Stoffregen's](https://www.pjrc.com/) amazing [Teensy 4.x](https://www.pjrc.com/store/teensy40.html) for the password generator and [Adafruit's](https://learn.adafruit.com/) easy-to-use [Feather Huzzah ESP8266](https://learn.adafruit.com/adafruit-feather-huzzah-esp8266/overview) as a secure web server for the UI.
 
-## Why?
-Master Password already comes in every possible flavour, why would you want to do this? And anyway, you can't possibly run crypto code
-on those little things, they don't have enough ... everything!
+## What is Master Password?
+Master Password is a *very cool* idea. 
+
+1. You only need to remember your name, and one password, forever!
+2. You can generate unique passwords for every service you use, everywhere!
+3. If the generator device stops working, you loose it, it's stolen (or confiscated) or you simply forgot to take it with you, you can install the software on a new device (or use a simple webpage), start again and the exact same passwords will be generated again for you.
+
+> Isn't mathematics wonderful?!
+
+## How does it work?
+
+```
+                           +---------+                    
+    Your Name ------------>|         |                     +---------+
+                           | scrypt* |---> Master Key ---->|         |                      +-----------+
+    Master Password ------>|         |                     | PBKDF2* |---> Service Key ---->| Password  |
+                           +---------+           +-------->|         |                      | Schedule  |---> (Unique Password)
+                                                 |         +---------+        +------------>| Generator |
+    Services                                     |                            |             +-----------+
+    --------                                     |                            |
+    twitter.com ---------+                       |                            |
+    amazone.com ---------+                       |                            |
+    facebook.com --------+-----------------------+                            |
+    House Alarm ---------+                                                    |
+    (Etc) ---------------+                                                    |
+                                                                              |
+    Password style (Long/Short/PIN etc) --------------------------------------+
+
+    * scrypt is a hard cryptographic algorithm
+    * PBKDF2 (based on HMAC(SHA256)) is a relatively quick cryptographic algorithm
+
+```
+
+Behind the scenes, the Master Password algorithm combines your name and master password cryptographically to produce what is known as a hash (something that's fairly easy to do in one direction, but almost impossible to reverse). Then this hash is combined with the service name that you want to generate a service hash, and then combined with a password style (everyone seems to have a different idea on what a password should be) to produce a unique password for that service.
+
+The real implementation is a little more complex than this, but this is essentially what goes on to build you a password.
+
+## Ok, why make an embedded version ?
+Master Password already comes in many flavours, why would you want to do this? And anyway, you can't possibly run crypto code on those little things, they don't have enough, er,  ... everything!
 
 Ok, so here are my reasons:
 
-1. Primarily I wanted a custom hardware solution with the algorithm running on it so that I could be reasonably sure it wasn't compromised in any way. Once the firmware is uploaded to the hardware devices, it is much more attack proof than code on a PC or mobile device. Without physical access to the hardware, updating the firmware is difficult, if not impossible.
-2. Understanding that there is nothing in the code that is nefarious. Of course that really only applies to me since I typed (almost) every line of code in just to make sure. You'll have to take my word for it ... well, actually you won't because you can see it all here in this repo and make sure there is nothing that can compromise your security. I also didn't take any standard libraries, every algorithm was re-implemented from scratch, and they all come with unit tests to verify the algorithms.
-3. Running the scrypt algorithm on a tiny MCU is a challenge, but that's part of what makes writing code such a pleasure!
+1. I've been trying to get people I know to adopt a sensible password strategy -- forever! The main complaint I get is, "I can't remember all those passwords". I've personally used the iOS Master Password app for quite a while and thought about getting folk to use that, but when I tried, they were always not on the correct device with the password app installed, setup and configured (and they couldn't quite recall which sites they'd signed up to). What was needed was a password server - something that is available where ever you are in the world. But a password server would suffer from many of the security issues that password vaults and cloud services over the internet suffer from. You're not in control of it and so have no idea if it is being operated by a responsible actor. You need to have it running locally to be sure, but for most people this is a PITA, having a dedicated server hosting a website is just way beyond what most people are willing to commit to. What was needed here was a piece of dedicated hardware that managed passwords for the household and only that. Nothing else!
+2. I had just been playing around with a new MCU board from PJRC that had a 600MHz dual-core processor, and a truckload of SRAM with the option to expand it to 8MB. Woo, hoo. We might just be able to get some hard crypto running on that in a reasonable timeframe!
+3. Covid-19 was ravaging the planet in 2020 and I had some time that I could devote to this.
+4. I love writing code, I love building gadgets and this was looking like it could be seriously fun!
 
+## Schematics
+
+```
+                                                                                        My Phone
++------------------------------+        +---------------------------+                   My PC
+|   Teensy 4.1 + 8MB SRAM   TX o------->o RX    Adafruit ESP8266    |----->(WiFi)    <  My Tablet
+|       EMPW Firmware       RX o<-------o TX       EMPW Web UI      |<-----(Local)   <  Partner Phone
++------------------------------+        +---------------------------+        ^ |        Partner's PC
+                                                                             | |        Partner's Tablet
+                                                                             | |
+                                                                             | |
+                                                                             | V
+                                                                            (VPN)          
+                                                                             ^ |
+                                                                             | |
+                                                                             | V
+
+                                                                       My Phone at work 
+
+```
+
+As you can see from this diagram, an external hostile actor would need to get past your VPN, and your local network
+and then have a way to interfere with the firmware before they could interfere with your system. And even if they did
+you still haven't revealed your Master Password which makes everything else rather moot.  
 
 ## Hardware requirements
 
